@@ -1,5 +1,4 @@
-import type { AppData, DailyEntry, DayPlan, LoggedWorkout } from './types';
-import { dayForWeekday } from './program';
+import type { AppData, DailyEntry } from './types';
 
 /* ---------- dates ---------- */
 
@@ -52,9 +51,6 @@ export function weekDates(tz: string): string[] {
 
 /* ---------- weekly plan ---------- */
 
-export function planForDate(key: string): DayPlan {
-  return dayForWeekday(weekdayOf(key));
-}
 
 /* ---------- checklist / XP ---------- */
 
@@ -80,11 +76,6 @@ export function dayXp(entry?: DailyEntry): number {
   return TASKS.reduce((a, t) => a + (entry.tasks?.[t.id] ? t.xp : 0), 0);
 }
 
-/* ---------- workouts ---------- */
-
-export function workoutOn(workouts: LoggedWorkout[], date: string): LoggedWorkout | null {
-  return workouts.find((w) => w.date === date) ?? null;
-}
 
 export function latestMeasurement(data: AppData) {
   return [...data.measurements].sort((a, b) => (a.date < b.date ? 1 : -1))[0] ?? null;

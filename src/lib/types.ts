@@ -1,30 +1,3 @@
-export type Unit = 'kg' | 'bw' | 'sec' | 'min';
-
-export type Exercise = {
-  id: string;
-  name: string;
-  sets: number;
-  repMin: number;
-  repMax: number;
-  restSec: number;
-  rpe: number;
-  unit: Unit;
-  defaultWeight: number;
-  increment: number;
-  note?: string;
-};
-
-/** One day of the fixed weekly schedule. */
-export type DayPlan = {
-  id: string;
-  weekday: number; // 0 = dimanche … 6 = samedi
-  label: string;
-  title: string;
-  focus: string;
-  rest: boolean;
-  exercises: Exercise[];
-};
-
 export type SetEntry = { weight: number; reps: number };
 export type LoggedExercise = { exerciseId: string; sets: SetEntry[] };
 export type LoggedWorkout = {
@@ -69,6 +42,72 @@ export type Objective = {
   requiresProof?: boolean;
   /** Set when the objective came out of the random generator, to avoid repeats. */
   generated?: boolean;
+};
+
+/* ---------- agenda (calendrier) ---------- */
+
+export type EventKind = 'rdv' | 'cours' | 'reunion' | 'evenement' | 'anniversaire';
+
+/** How an event comes back. Dates stay local to the user's time zone. */
+export type Repeat = 'none' | 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'yearly';
+
+export type CalEvent = {
+  id: string;
+  kind: EventKind;
+  title: string;
+  /** First occurrence, YYYY-MM-DD. */
+  date: string;
+  /** HH:MM; absent for an all-day event. */
+  time?: string;
+  /** Minutes. Ignored for an all-day event. */
+  duration: number;
+  description?: string;
+  repeat: Repeat;
+  /** Last day a repeating event may occur, inclusive. */
+  until?: string;
+  /** Occurrences removed one by one from a repeating event. */
+  exceptions?: string[];
+  /** Minutes before the start; an all-day item counts from 09:00. */
+  reminders: number[];
+  createdAt: string;
+};
+
+export type TaskPriority = 'basse' | 'normale' | 'haute' | 'urgente';
+export type TaskStatus = 'a-faire' | 'en-cours' | 'termine';
+
+export type CalTask = {
+  id: string;
+  title: string;
+  /** Unscheduled when absent — it then lives in its project or the inbox. */
+  date?: string;
+  time?: string;
+  /** Minutes, for tasks with a time. */
+  duration?: number;
+  priority: TaskPriority;
+  status: TaskStatus;
+  category: Category;
+  reminders: number[];
+  projectId?: string;
+  notes?: string;
+  createdAt: string;
+  doneAt?: string;
+};
+
+/** A plan made of tasks, e.g. "Lancement Reda Studio". Separate from Business projects. */
+export type AgendaProject = {
+  id: string;
+  title: string;
+  color: string;
+  description?: string;
+  deadline?: string;
+  createdAt: string;
+  archived?: boolean;
+};
+
+export type Agenda = {
+  events: CalEvent[];
+  tasks: CalTask[];
+  projects: AgendaProject[];
 };
 
 /**
@@ -331,6 +370,8 @@ export type AppData = {
   subscriptions: Subscription[];
   /** Bank links, accounts and transactions pulled from an aggregator. */
   bank: Bank;
+  /** Calendar events, tasks and task projects. */
+  agenda: Agenda;
   /** Photo proofs, keyed by `proofKey(date, objectiveId)`. */
   proofs: Record<string, ObjectiveProof>;
   player: Player;

@@ -19,8 +19,13 @@ Quatre onglets, pensés pour le pouce sur mobile, plus le profil.
   vient des objectifs, des tâches Discipline, des finances et de bonus
   (journée complète, journée bouclée, paliers de série). Elle est recalculée
   depuis les données enregistrées : rien ne peut dériver.
-- **Calendrier** — le mois, avec l'XP, les objectifs et le planning de chaque
-  jour.
+- **Calendrier** — agenda, tâches et projets réunis. Vues Jour, 3 jours,
+  Semaine et Mois ; événements (rendez-vous, cours, réunions, événements,
+  anniversaires) avec heure, durée, description, répétition et rappels
+  multiples (5 min, 15 min, 30 min, 1 h, 1 jour ou personnalisé) ; tâches avec
+  priorité, statut, catégorie et projet ; projets avec leur progression ; les
+  objectifs du jour placés à leur heure. Création en touchant un créneau,
+  glisser-déposer (appui long sur mobile), durée étirable, recherche, filtres.
 - **Business** — projets, finances personnelles, épargne, investissements,
   comptes bancaires, abonnements.
 - **Profil** — identité, récompenses et classement, mensurations.
@@ -167,7 +172,8 @@ part encore s'il est déclenché à 9 h 40, mais jamais deux fois.
 
 Rappels gérés : créatine (heure fixe), hydratation (toutes les N heures entre
 deux bornes), 3 repas, sommeil, objectifs, rappels du soir (20 h et 22 h s'il
-reste des objectifs), bilan du jour.
+reste des objectifs), bilan du jour, et les rappels de chaque événement ou
+tâche du calendrier.
 Toutes les heures se règlent dans l'écran Réglages.
 
 ## Installer sur l'écran d'accueil
@@ -198,7 +204,7 @@ src/
     page.tsx               Aujourd'hui (objectifs, checklist, XP, niveau, bilan)
     progression/           Niveau, statistiques, courbe et paliers
     quetes/                Toutes les quêtes et objectifs
-    calendrier/            Vue mensuelle
+    calendrier/            Agenda : vues, tâches, projets
     entrepreneuriat/       Projets et finances (banque, investir)
     profil/                Profil, mensurations ; recompenses/ et classement
     reglages/              Profil, rappels, activation push
@@ -216,6 +222,7 @@ src/
     program.ts             Données par défaut, migration, planning de la semaine
     logic.ts               Dates, checklist Discipline
     xp.ts                  XP par jour, bonus, niveaux et noms, séries, statistiques
+    agenda.ts              Répétitions, fusion du jour, rappels, recherche, projets
     schedule.ts            Calcul des rappels dus
     push.ts                Envoi web-push (VAPID)
     db.ts                  Postgres, avec repli en mémoire

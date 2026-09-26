@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { alreadySent, markSent, readData } from '@/lib/db';
 import { dueNotifications, localNow, objectiveReminders } from '@/lib/schedule';
 import { sendToAll } from '@/lib/push';
+import { agendaReminders } from '@/lib/agenda';
 import { cronSecret } from '@/lib/auth';
 
 export const runtime = 'nodejs';
@@ -25,7 +26,11 @@ export async function GET(req: Request) {
   try {
     const data = await readData();
     const now = new Date();
-    const due = [...dueNotifications(data.settings, now), ...objectiveReminders(data, now)];
+    const due = [
+      ...dueNotifications(data.settings, now),
+      ...objectiveReminders(data, now),
+      ...agendaReminders(data, now),
+    ];
     const results: { key: string; sent: number; failed: number }[] = [];
 
     for (const item of due) {

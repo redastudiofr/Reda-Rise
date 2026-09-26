@@ -1,8 +1,7 @@
 import type {
+  Agenda,
   AppData,
   Bank,
-  DayPlan,
-  Exercise,
   Investments,
   Objective,
   Player,
@@ -19,137 +18,6 @@ export const DEFAULT_REWARDS: Reward[] = [
   { id: 'r-50', level: 50, label: 'Machine', custom: false },
   { id: 'r-100', level: 100, label: 'Elite', custom: false },
 ];
-
-/** Walking is part of every session, and of the two rest days. */
-const MARCHE: Exercise = {
-  id: 'marche',
-  name: 'Marche',
-  sets: 1,
-  repMin: 20,
-  repMax: 40,
-  restSec: 0,
-  rpe: 4,
-  unit: 'min',
-  defaultWeight: 0,
-  increment: 0,
-  note: 'Après la séance ou dans la journée',
-};
-
-const MARCHE_LONGUE: Exercise = {
-  ...MARCHE,
-  repMin: 40,
-  repMax: 60,
-  note: 'Jour de repos — sortie plus longue',
-};
-
-/** Fixed weekly schedule, index 0 = dimanche. */
-export const WEEK: DayPlan[] = [
-  {
-    id: 'dim',
-    weekday: 0,
-    label: 'Dimanche',
-    title: 'Repos',
-    focus: 'Récupération complète',
-    rest: true,
-    exercises: [MARCHE_LONGUE],
-  },
-  {
-    id: 'lun',
-    weekday: 1,
-    label: 'Lundi',
-    title: 'Jambes',
-    focus: 'Quadriceps, ischios, mollets',
-    rest: false,
-    exercises: [
-      { id: 'squat-barre', name: 'Squat', sets: 4, repMin: 6, repMax: 8, restSec: 180, rpe: 8, unit: 'kg', defaultWeight: 60, increment: 2.5 },
-      { id: 'presse-cuisses', name: 'Presse à cuisses', sets: 4, repMin: 10, repMax: 12, restSec: 120, rpe: 8, unit: 'kg', defaultWeight: 110, increment: 5 },
-      { id: 'fentes-marchees', name: 'Fentes marchées', sets: 3, repMin: 10, repMax: 12, restSec: 90, rpe: 8, unit: 'kg', defaultWeight: 16, increment: 2, note: 'Par jambe' },
-      { id: 'leg-curl-allonge', name: 'Leg curl', sets: 3, repMin: 10, repMax: 12, restSec: 90, rpe: 8, unit: 'kg', defaultWeight: 35, increment: 2.5 },
-      { id: 'leg-extension', name: 'Leg extension', sets: 3, repMin: 12, repMax: 15, restSec: 75, rpe: 8, unit: 'kg', defaultWeight: 35, increment: 2.5 },
-      MARCHE,
-    ],
-  },
-  {
-    id: 'mar',
-    weekday: 2,
-    label: 'Mardi',
-    title: 'Dos + Biceps',
-    focus: 'Tirage vertical et horizontal',
-    rest: false,
-    exercises: [
-      { id: 'tractions', name: 'Tractions', sets: 4, repMin: 6, repMax: 10, restSec: 150, rpe: 8, unit: 'bw', defaultWeight: 0, increment: 2.5, note: 'Lest additionnel' },
-      { id: 'tirage-vertical', name: 'Tirage vertical', sets: 4, repMin: 8, repMax: 12, restSec: 90, rpe: 8, unit: 'kg', defaultWeight: 45, increment: 2.5 },
-      { id: 'rowing-barre', name: 'Rowing barre', sets: 4, repMin: 8, repMax: 10, restSec: 120, rpe: 8, unit: 'kg', defaultWeight: 45, increment: 2.5 },
-      { id: 'rowing-poulie-basse', name: 'Rowing poulie basse', sets: 3, repMin: 10, repMax: 12, restSec: 90, rpe: 8, unit: 'kg', defaultWeight: 45, increment: 2.5 },
-      { id: 'curl-barre', name: 'Curl barre', sets: 3, repMin: 8, repMax: 12, restSec: 75, rpe: 8, unit: 'kg', defaultWeight: 25, increment: 2.5 },
-      { id: 'curl-incline', name: 'Curl incliné haltères', sets: 3, repMin: 10, repMax: 12, restSec: 75, rpe: 8, unit: 'kg', defaultWeight: 10, increment: 2 },
-      MARCHE,
-    ],
-  },
-  {
-    id: 'mer',
-    weekday: 3,
-    label: 'Mercredi',
-    title: 'Repos actif',
-    focus: 'Marche et mobilité',
-    rest: true,
-    exercises: [MARCHE_LONGUE],
-  },
-  {
-    id: 'jeu',
-    weekday: 4,
-    label: 'Jeudi',
-    title: 'Pectoraux + Triceps',
-    focus: 'Poussée horizontale et bras',
-    rest: false,
-    exercises: [
-      { id: 'developpe-couche', name: 'Développé couché barre', sets: 4, repMin: 6, repMax: 8, restSec: 180, rpe: 8, unit: 'kg', defaultWeight: 50, increment: 2.5 },
-      { id: 'developpe-incline-halteres', name: 'Développé incliné haltères', sets: 4, repMin: 8, repMax: 10, restSec: 120, rpe: 8, unit: 'kg', defaultWeight: 20, increment: 2 },
-      { id: 'dips', name: 'Dips', sets: 3, repMin: 8, repMax: 12, restSec: 120, rpe: 8, unit: 'bw', defaultWeight: 0, increment: 2.5, note: 'Lest additionnel' },
-      { id: 'ecarte-poulie', name: 'Écarté à la poulie', sets: 3, repMin: 12, repMax: 15, restSec: 75, rpe: 8, unit: 'kg', defaultWeight: 12, increment: 2.5 },
-      { id: 'extensions-triceps-poulie', name: 'Extension triceps à la poulie', sets: 3, repMin: 12, repMax: 15, restSec: 60, rpe: 8, unit: 'kg', defaultWeight: 25, increment: 2.5 },
-      { id: 'extension-triceps-tete', name: 'Extension triceps au-dessus de la tête', sets: 3, repMin: 10, repMax: 12, restSec: 75, rpe: 8, unit: 'kg', defaultWeight: 15, increment: 2.5 },
-      MARCHE,
-    ],
-  },
-  {
-    id: 'ven',
-    weekday: 5,
-    label: 'Vendredi',
-    title: 'Épaules + Abdos',
-    focus: 'Deltoïdes, ceinture abdominale, cou',
-    rest: false,
-    exercises: [
-      { id: 'developpe-militaire-halteres', name: 'Développé militaire haltères', sets: 4, repMin: 8, repMax: 10, restSec: 120, rpe: 8, unit: 'kg', defaultWeight: 16, increment: 2 },
-      { id: 'elevations-laterales', name: 'Élévations latérales', sets: 4, repMin: 12, repMax: 15, restSec: 60, rpe: 9, unit: 'kg', defaultWeight: 8, increment: 1 },
-      { id: 'oiseau', name: 'Oiseau', sets: 3, repMin: 12, repMax: 15, restSec: 60, rpe: 9, unit: 'kg', defaultWeight: 8, increment: 1 },
-      { id: 'elevations-frontales', name: 'Élévations frontales', sets: 3, repMin: 12, repMax: 15, restSec: 60, rpe: 8, unit: 'kg', defaultWeight: 8, increment: 1 },
-      { id: 'crunch-poulie', name: 'Crunch à la poulie', sets: 4, repMin: 12, repMax: 15, restSec: 60, rpe: 8, unit: 'kg', defaultWeight: 20, increment: 2.5 },
-      { id: 'releves-jambes', name: 'Relevés de jambes', sets: 4, repMin: 10, repMax: 15, restSec: 60, rpe: 8, unit: 'bw', defaultWeight: 0, increment: 0 },
-      MARCHE,
-    ],
-  },
-  {
-    id: 'sam',
-    weekday: 6,
-    label: 'Samedi',
-    title: 'Jambes',
-    focus: 'Chaîne postérieure',
-    rest: false,
-    exercises: [
-      { id: 'souleve-terre-roumain', name: 'Soulevé de terre roumain', sets: 4, repMin: 8, repMax: 10, restSec: 150, rpe: 8, unit: 'kg', defaultWeight: 60, increment: 2.5 },
-      { id: 'squat-gobelet', name: 'Squat gobelet', sets: 3, repMin: 10, repMax: 12, restSec: 90, rpe: 8, unit: 'kg', defaultWeight: 24, increment: 2 },
-      { id: 'presse-pieds-hauts', name: 'Presse à cuisses pieds hauts', sets: 3, repMin: 12, repMax: 15, restSec: 120, rpe: 8, unit: 'kg', defaultWeight: 90, increment: 5 },
-      { id: 'hip-thrust', name: 'Hip thrust', sets: 4, repMin: 10, repMax: 12, restSec: 120, rpe: 8, unit: 'kg', defaultWeight: 60, increment: 5 },
-      { id: 'mollets-assis', name: 'Mollets assis', sets: 4, repMin: 15, repMax: 20, restSec: 60, rpe: 9, unit: 'kg', defaultWeight: 40, increment: 2.5 },
-      MARCHE,
-    ],
-  },
-];
-
-export function dayForWeekday(weekday: number): DayPlan {
-  return WEEK[weekday] ?? WEEK[0];
-}
 
 export const DEFAULT_SETTINGS: Settings = {
   profile: {
@@ -190,6 +58,7 @@ export function defaultData(): AppData {
     financialGoals: [],
     subscriptions: [],
     bank: { connections: [], accounts: [], transactions: [] },
+    agenda: { events: [], tasks: [], projects: [] },
     proofs: {},
     player: { id: newPlayerId(), shareToLeaderboard: false },
     rewards: DEFAULT_REWARDS,
@@ -231,6 +100,7 @@ export function normalizeData(raw: unknown): AppData {
     investments?: Partial<Investments>;
     bank?: Partial<Bank>;
     player?: Partial<Player>;
+    agenda?: Partial<Agenda>;
   };
   const s = (d.settings ?? {}) as Partial<Settings>;
   const n = (s.notifications ?? {}) as Partial<Settings['notifications']>;
@@ -275,6 +145,11 @@ export function normalizeData(raw: unknown): AppData {
       accounts: Array.isArray(d.bank?.accounts) ? d.bank.accounts : [],
       transactions: Array.isArray(d.bank?.transactions) ? d.bank.transactions : [],
       lastSyncAt: typeof d.bank?.lastSyncAt === 'string' ? d.bank.lastSyncAt : undefined,
+    },
+    agenda: {
+      events: Array.isArray(d.agenda?.events) ? d.agenda.events : [],
+      tasks: Array.isArray(d.agenda?.tasks) ? d.agenda.tasks : [],
+      projects: Array.isArray(d.agenda?.projects) ? d.agenda.projects : [],
     },
     proofs: d.proofs && typeof d.proofs === 'object' ? d.proofs : {},
     player: {
