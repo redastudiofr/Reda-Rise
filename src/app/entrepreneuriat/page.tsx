@@ -369,7 +369,7 @@ export default function BusinessPage() {
         </div>
 
         <div className="nav-cards">
-          <Link href="/entrepreneuriat/banque" className="nav-card">
+          <Link href="/finances/banque" className="nav-card">
             <span className="nav-card-title">Comptes bancaires</span>
             <span className="nav-card-meta">
               {data.bank.accounts.length > 0

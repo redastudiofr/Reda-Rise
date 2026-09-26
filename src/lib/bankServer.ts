@@ -1,4 +1,6 @@
 import { BANK_PROVIDERS, type BankStatus } from './bank';
+import { securityBlockers, storageDurable } from './bankSecurity';
+import { checkKey } from './bankProviders/enableBanking';
 import type { BankProviderId } from './types';
 
 /**
@@ -39,14 +41,51 @@ export function missingVars(): string[] {
   return best.envVars.filter((v) => !isSet(v));
 }
 
+/** Providers this app has a working connector for. */
+const IMPLEMENTED = new Set(['enablebanking']);
+
 export function bankStatus(): BankStatus {
   const provider = activeProvider();
+  const blockers = securityBlockers();
+  if (provider === 'enablebanking') {
+    const keyProblem = checkKey();
+    if (keyProblem) blockers.push({ id: 'provider_key', message: keyProblem });
+  }
   return {
     configured: provider !== null,
     provider,
     providers: BANK_PROVIDERS,
     missing: missingVars(),
+    implemented: provider !== null && IMPLEMENTED.has(provider),
+    blockers,
+    durable: storageDurable(),
   };
+}
+
+/**
+ * Gate shared by every route that talks to a bank: a provider with a real
+ * connector, and every security prerequisite met. Returns the reason to
+ * refuse, or null when the request may proceed.
+ */
+export function bankGate(): { status: number; body: Record<string, unknown> } | null {
+  const s = bankStatus();
+  if (!s.configured) return { status: 501, body: notConfigured() };
+  if (!s.implemented) {
+    return {
+      status: 501,
+      body: {
+        error: 'bank_provider_not_implemented',
+        message: `Le fournisseur « ${s.provider} » est configuré mais n’a pas de connecteur dans l’app. Utilise Enable Banking.`,
+      },
+    };
+  }
+  if (s.blockers.length > 0) {
+    return {
+      status: 403,
+      body: { error: 'bank_security_not_ready', message: 'Connexion bancaire bloquée par sécurité.', blockers: s.blockers },
+    };
+  }
+  return null;
 }
 
 /** Body returned by every bank route that needs a provider and has none. */
@@ -60,4 +99,12 @@ export function notConfigured() {
     missing: status.missing,
     providers: status.providers,
   };
+}
+
+/** Bank responses are never cached by the browser, a proxy or the service worker. */
+export function bankJson(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store, private' },
+  });
 }

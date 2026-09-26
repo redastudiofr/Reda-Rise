@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useData } from '@/components/DataProvider';
 import QuickAmount from '@/components/QuickAmount';
@@ -317,6 +318,20 @@ export default function FinancesPage() {
                 </div>
               ) : null}
             </section>
+
+            <Link href="/finances/banque" className="card fin-bank-card">
+              <span>
+                <b>Banque &amp; analyse</b>
+                <small>
+                  {data.bank.connections.length > 0
+                    ? `${data.bank.connections.length} banque${data.bank.connections.length > 1 ? 's' : ''} connectée${data.bank.connections.length > 1 ? 's' : ''} · ${data.bank.transactions.length} opérations`
+                    : 'Connecter une banque ou importer un relevé, puis analyser'}
+                </small>
+              </span>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M9 5.5 15.5 12 9 18.5" />
+              </svg>
+            </Link>
 
             <section className="section">
               <div className="row fin-head">

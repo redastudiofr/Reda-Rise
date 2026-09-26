@@ -4,7 +4,11 @@ const nextConfig = {
   serverExternalPackages: ['pg', 'web-push'],
   // The Musculation section was removed: old bookmarks and installed apps land on the home page.
   async redirects() {
-    return [{ source: '/muscu/:path*', destination: '/', permanent: false }];
+    return [
+      { source: '/muscu/:path*', destination: '/', permanent: false },
+      // Bank moved from Business to personal finances.
+      { source: '/entrepreneuriat/banque', destination: '/finances/banque', permanent: false },
+    ];
   },
   async headers() {
     return [

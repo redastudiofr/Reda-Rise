@@ -58,6 +58,7 @@ export function defaultData(): AppData {
     financialGoals: [],
     accounts: [],
     savingsGoals: [],
+    monthlySavingsTarget: 0,
     subscriptions: [],
     bank: { connections: [], accounts: [], transactions: [] },
     agenda: { events: [], tasks: [], projects: [] },
@@ -143,6 +144,8 @@ export function normalizeData(raw: unknown): AppData {
     financialGoals: Array.isArray(d.financialGoals) ? d.financialGoals : [],
     accounts: Array.isArray(d.accounts) ? d.accounts : [],
     savingsGoals: Array.isArray(d.savingsGoals) ? d.savingsGoals : [],
+    monthlySavingsTarget:
+      typeof d.monthlySavingsTarget === 'number' && d.monthlySavingsTarget > 0 ? d.monthlySavingsTarget : 0,
     subscriptions: Array.isArray(d.subscriptions) ? d.subscriptions : [],
     bank: {
       connections: Array.isArray(d.bank?.connections) ? d.bank.connections : [],

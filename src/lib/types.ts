@@ -240,7 +240,7 @@ export type Investments = {
 /* ---------- comptes bancaires ---------- */
 
 /** Aggregators the app is wired for. Which one is live depends on the env vars. */
-export type BankProviderId = 'powens' | 'bridge' | 'gocardless' | 'tink' | 'plaid';
+export type BankProviderId = 'enablebanking' | 'powens' | 'bridge' | 'gocardless' | 'tink' | 'plaid';
 
 /**
  * A link to one bank, established through an aggregator. Only the opaque ids
@@ -255,6 +255,8 @@ export type BankConnection = {
   connectedAt: string;
   lastSyncAt?: string;
   error?: string;
+  /** Day the bank consent ends (PSD2: renewed at least every 180 days). */
+  validUntil?: string;
 };
 
 export type BankAccountKind = 'courant' | 'epargne' | 'carte' | 'titres' | 'autre';
@@ -294,6 +296,8 @@ export type BankTransaction = {
   category: SpendCategory;
   /** True once the user has corrected the automatic classification. */
   manualCategory?: boolean;
+  /** Pending at the bank, not yet booked. */
+  pending?: boolean;
 };
 
 export type Bank = {
@@ -423,6 +427,8 @@ export type AppData = {
   accounts: MoneyAccount[];
   /** Personal savings goals, each with its own progress. */
   savingsGoals: SavingsGoal[];
+  /** How much the user wants to save each month (0 = not set). */
+  monthlySavingsTarget: number;
   /** Recurring monthly charges, kept apart from the one-off ledger. */
   subscriptions: Subscription[];
   /** Bank links, accounts and transactions pulled from an aggregator. */

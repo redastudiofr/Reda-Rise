@@ -40,6 +40,8 @@ type MemoryStore = {
   subs: Map<string, PushSub>;
   sent: Set<string>;
   board: Map<string, LeaderboardRow>;
+  /** Encrypted bank links, by link id (memory fallback only). */
+  bankLinks: Map<string, string>;
   pool: Pool | null;
   ready: Promise<void> | null;
 };
@@ -52,6 +54,7 @@ const mem: MemoryStore =
     subs: new Map(),
     sent: new Set(),
     board: new Map(),
+    bankLinks: new Map(),
     pool: null,
     ready: null,
   });
@@ -103,6 +106,13 @@ async function ensureSchema(pool: Pool): Promise<void> {
         xp integer not null default 0,
         level integer not null default 1,
         streak integer not null default 0,
+        updated_at timestamptz not null default now()
+      );
+    `);
+    await pool.query(`
+      create table if not exists bank_links (
+        id text primary key,
+        sealed text not null,
         updated_at timestamptz not null default now()
       );
     `);
@@ -267,4 +277,43 @@ export async function removeFromLeaderboard(playerId: string): Promise<void> {
   }
   await ensureSchema(pool);
   await pool.query('delete from leaderboard where player_id = $1', [playerId]);
+}
+
+/* ---------- liens bancaires (côté serveur uniquement) ---------- */
+
+/**
+ * Bank links hold what gives access to the user's bank data (the provider
+ * session). They live here, sealed by bankVault.ts, and are never part of
+ * the app document the browser receives.
+ */
+export async function listBankLinks(): Promise<{ id: string; sealed: string }[]> {
+  const pool = await getPool();
+  if (!pool) return [...(mem.bankLinks ?? new Map()).entries()].map(([id, sealed]) => ({ id, sealed }));
+  await ensureSchema(pool);
+  const res = await pool.query('select id, sealed from bank_links order by updated_at');
+  return res.rows.map((r: { id: string; sealed: string }) => ({ id: r.id, sealed: r.sealed }));
+}
+
+export async function putBankLink(id: string, sealed: string): Promise<void> {
+  const pool = await getPool();
+  if (!pool) {
+    (mem.bankLinks ??= new Map()).set(id, sealed);
+    return;
+  }
+  await ensureSchema(pool);
+  await pool.query(
+    `insert into bank_links (id, sealed, updated_at) values ($1, $2, now())
+     on conflict (id) do update set sealed = excluded.sealed, updated_at = now()`,
+    [id, sealed],
+  );
+}
+
+export async function deleteBankLink(id: string): Promise<void> {
+  const pool = await getPool();
+  if (!pool) {
+    mem.bankLinks?.delete(id);
+    return;
+  }
+  await ensureSchema(pool);
+  await pool.query('delete from bank_links where id = $1', [id]);
 }

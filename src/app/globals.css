@@ -5475,3 +5475,285 @@ a {
   flex: 0 0 auto;
   white-space: nowrap;
 }
+
+/* ---------- banque & analyse ---------- */
+
+@media (min-width: 960px) {
+  .shell:has(> .bk) {
+    max-width: 980px;
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+}
+
+.bk-notice {
+  margin: 0 0 12px;
+}
+
+.bk .link-sm,
+.bk button.link-sm {
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 560;
+  color: var(--accent-strong);
+}
+
+.bk-safe {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  padding-left: 22px;
+  position: relative;
+}
+
+.bk-safe::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: rgba(79, 178, 134, 0.18);
+  border: 1px solid rgba(79, 178, 134, 0.5);
+}
+
+.bk-state {
+  margin-top: 12px;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.bk-state b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.bk-state[data-tone='warn'] b {
+  color: #d8c188;
+}
+
+.bk-state ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.bk-state code {
+  font-size: 11.5px;
+  background: var(--surface-2);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+
+.bk-links {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.bk-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.bk-link[data-status='needs_action'] {
+  border-color: #3a3320;
+}
+
+.bk-link-main {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+
+.bk-link-main b {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.bk-link-main small {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.bk-link-main .bk-err {
+  color: #d8c188;
+}
+
+.bk-monthnav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.bk-monthnav b {
+  font-size: 15px;
+  font-weight: 620;
+  text-transform: capitalize;
+}
+
+.bk-monthnav .fin-nav {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.bk-story {
+  display: grid;
+  gap: 6px;
+  font-size: 15px;
+  line-height: 1.45;
+  background:
+    radial-gradient(110% 90% at 0% 0%, rgba(77, 134, 234, 0.12), transparent 60%),
+    var(--surface);
+}
+
+.bk-story p {
+  margin: 0;
+}
+
+.bk-story b {
+  font-weight: 680;
+}
+
+.bk-story small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bk-goal-bar {
+  margin: 4px 0 6px;
+  height: 8px;
+}
+
+.bk-goal-bar > i {
+  background: linear-gradient(90deg, #2f8a64, #4fb286);
+}
+
+.bk-target {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.bk-target .input {
+  max-width: 140px;
+}
+
+.bk-kpis {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 10px;
+}
+
+@media (min-width: 720px) {
+  .bk-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.bk-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 20px;
+}
+
+@media (min-width: 820px) {
+  .bk-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.bk-rank {
+  flex: 0 0 22px;
+  height: 22px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  background: var(--surface-2);
+}
+
+.bk-banks {
+  margin-top: 12px;
+  display: grid;
+  gap: 6px;
+  max-height: 46dvh;
+  overflow-y: auto;
+}
+
+.bk-bank {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.bk-bank img,
+.bk-bank-ph {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  flex: 0 0 28px;
+  object-fit: contain;
+  background: #fff;
+}
+
+.bk-bank-ph {
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.bk-bank span {
+  flex: 1;
+}
+
+.bk-bank small {
+  color: var(--accent-strong);
+}
+
+.fin-bank-card {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px !important;
+}
+
+.fin-bank-card > span {
+  flex: 1;
+  display: grid;
+}
+
+.fin-bank-card b {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.fin-bank-card small {
+  font-size: 12px;
+  color: var(--muted);
+}

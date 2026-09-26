@@ -34,6 +34,12 @@ Cinq onglets, pensés pour le pouce sur mobile, dont le profil.
   (utilisation, prix, importance, alternative) qui suggère sans jamais
   décider ; objectifs d'épargne avec progression et pistes générales (pas un
   conseil financier personnalisé). Aucune connexion bancaire ici.
+- **Banque & analyse** (`/finances/banque`) — connexion bancaire via
+  Enable Banking (DSP2, banques européennes) ou import de relevé CSV ; soldes
+  et opérations récupérés en lecture, classés automatiquement. Analyse :
+  dépenses du mois et de la semaine, revenus, épargne, évolution mensuelle,
+  catégories, principales dépenses, objectif d'épargne mensuel. Voir
+  « Connexion bancaire » plus bas.
 - **Business** — projets, finances personnelles, épargne, investissements,
   comptes bancaires, abonnements.
 - **Profil** — identité, récompenses et classement, mensurations.
@@ -243,6 +249,21 @@ public/
   sw.js                    Service worker : cache hors-ligne + push
   icons/                   Icônes 192, 512, maskable, apple-touch
 ```
+
+## Connexion bancaire
+
+- L'utilisateur s'identifie sur le site de sa banque ; l'app ne reçoit qu'un
+  code, échangé côté serveur contre une session de lecture (90 jours).
+- La session et les identifiants de comptes du fournisseur restent sur le
+  serveur, chiffrés (AES-256-GCM) dans la table `bank_links`. Le navigateur ne
+  reçoit que le nom de la banque, les 4 derniers caractères de l'IBAN, les
+  soldes et les opérations.
+- Le retour de la banque est vérifié par un `state` aléatoire lié à un cookie
+  httpOnly scellé, à usage unique, valable 15 minutes.
+- Refus de se connecter tant que l'app n'est pas protégée (`APP_PASSWORD`) et
+  qu'`AUTH_SECRET` n'est pas un secret propre. Réponses `no-store`.
+- Déconnexion : l'autorisation est retirée chez le fournisseur et le lien
+  supprimé ; l'historique peut être gardé ou effacé.
 
 ## Notes
 

@@ -1,6 +1,7 @@
 import type {
   Bank,
   BankAccount,
+  BankConnection,
   BankProviderId,
   BankTransaction,
   SpendCategory,
@@ -15,9 +16,10 @@ import { shiftKey, weekDatesFrom } from './logic';
  * The app therefore never sees — and never stores — a banking login or
  * password. Only the opaque ids returned by the aggregator are kept.
  *
- * No aggregator is wired up yet: `/api/bank/status` reports which one the
- * environment is configured for, and the UI says plainly when none is. Nothing
- * here invents a connection or a transaction.
+ * Enable Banking is wired up (see bankProviders/enableBanking.ts); the other
+ * providers are listed but have no connector, and say so. `/api/bank/status`
+ * reports what the environment is configured for. Nothing here invents a
+ * connection or a transaction.
  */
 
 export type BankProviderInfo = {
@@ -30,6 +32,13 @@ export type BankProviderInfo = {
 };
 
 export const BANK_PROVIDERS: BankProviderInfo[] = [
+  {
+    id: 'enablebanking',
+    label: 'Enable Banking',
+    envVars: ['ENABLEBANKING_APP_ID', 'ENABLEBANKING_PRIVATE_KEY'],
+    docs: 'https://enablebanking.com/docs/api/quick-start/',
+    note: 'Agréé DSP2, banques européennes. Gratuit pour relier ses propres comptes (mode restreint).',
+  },
   {
     id: 'powens',
     label: 'Powens (ex-Budget Insight)',
@@ -49,7 +58,7 @@ export const BANK_PROVIDERS: BankProviderInfo[] = [
     label: 'GoCardless Bank Account Data',
     envVars: ['GOCARDLESS_SECRET_ID', 'GOCARDLESS_SECRET_KEY'],
     docs: 'https://developer.gocardless.com/bank-account-data',
-    note: 'Gratuit jusqu’à un certain volume, couverture européenne.',
+    note: 'Inscriptions fermées depuis juillet 2025 — seuls les comptes existants fonctionnent.',
   },
   {
     id: 'tink',
@@ -74,6 +83,12 @@ export type BankStatus = {
   providers: BankProviderInfo[];
   /** Which variables are still missing for the closest-to-ready provider. */
   missing: string[];
+  /** Whether the configured provider has a working connector in this app. */
+  implemented: boolean;
+  /** Security prerequisites not met yet; connecting is refused while any remain. */
+  blockers: { id: string; message: string }[];
+  /** Server-side storage is durable (a database), not memory that restarts. */
+  durable: boolean;
 };
 
 /* ---------- classement automatique des dépenses ---------- */
@@ -351,4 +366,61 @@ export function transactionsOf(bank: Bank, accountId: string | null): BankTransa
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
+}
+
+/* ---------- fusion d'une synchronisation ---------- */
+
+export type SyncPayload = {
+  connections: BankConnection[];
+  accounts: BankAccount[];
+  transactions: BankTransaction[];
+  syncedAt: string;
+};
+
+/**
+ * Merges what the server fetched into the user's bank data.
+ * - Connections: the server's list is the truth for provider links.
+ * - Accounts: updated in place; a balance the bank did not return this time
+ *   keeps its previous value instead of disappearing.
+ * - Transactions: added once (stable ids); a category the user corrected is
+ *   kept; pending lines that the bank has since booked under another id are
+ *   dropped for the accounts that were refreshed.
+ */
+export function mergeSync(bank: Bank, p: SyncPayload): Bank {
+  const accounts = [...bank.accounts];
+  for (const incoming of p.accounts) {
+    const i = accounts.findIndex((a) => a.id === incoming.id);
+    if (i === -1) accounts.push(incoming);
+    else {
+      const old = accounts[i];
+      accounts[i] = {
+        ...old,
+        ...incoming,
+        balance: incoming.balance ?? old.balance,
+        updatedAt: incoming.balance !== undefined ? incoming.updatedAt : old.updatedAt,
+      };
+    }
+  }
+
+  const fresh = new Map(p.transactions.map((t) => [t.id, t]));
+  const refreshed = new Set(p.transactions.map((t) => t.accountId));
+  const kept = bank.transactions.filter(
+    (t) => fresh.has(t.id) || !(t.pending && refreshed.has(t.accountId)),
+  );
+  const byId = new Map(kept.map((t) => [t.id, t]));
+  for (const t of p.transactions) {
+    const old = byId.get(t.id);
+    byId.set(
+      t.id,
+      old?.manualCategory ? { ...t, category: old.category, manualCategory: true } : t,
+    );
+  }
+
+  return {
+    ...bank,
+    connections: p.connections,
+    accounts,
+    transactions: [...byId.values()],
+    lastSyncAt: p.connections.length > 0 ? p.syncedAt : bank.lastSyncAt,
+  };
 }
