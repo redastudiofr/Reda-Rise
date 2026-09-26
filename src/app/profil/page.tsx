@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import Avatar from '@/components/Avatar';
 import { useData } from '@/components/DataProvider';
+import LevelCard from '@/components/LevelCard';
+import ProgressChart from '@/components/ProgressChart';
 import Curve from '@/components/Curve';
 import { computeRecords, dayXp, formatDate, todayKey, uid } from '@/lib/logic';
 import { resizeToDataUrl } from '@/lib/image';
@@ -147,26 +149,14 @@ export default function ProfilePage() {
         </button>
       ) : null}
 
-      <div className="level-card">
-        <div className="row">
-          <div>
-            <div className="level-tag">Niveau</div>
-            <div className="level-number mono">{level.level}</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div className="level-xp mono">
-              {level.intoLevel} / {level.needed} XP
-            </div>
-            <div className="level-xp mono" style={{ opacity: 0.65 }}>
-              {level.total} XP au total
-            </div>
-          </div>
-        </div>
-        <div className="bar">
-          <i style={{ width: `${Math.round(level.progress * 100)}%` }} />
-        </div>
-        <Curve points={levelPoints} />
-      </div>
+      <LevelCard level={level}>
+        <ProgressChart
+          points={levelPoints}
+          format={(v) => `Niv. ${Math.round(v)}`}
+          formatTooltip={(v) => `Niveau ${Math.round(v)}`}
+          height={170}
+        />
+      </LevelCard>
 
       <div className="stat-row">
         <div className="stat">

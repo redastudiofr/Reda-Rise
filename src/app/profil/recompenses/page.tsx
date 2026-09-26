@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useData } from '@/components/DataProvider';
+import LevelCard from '@/components/LevelCard';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { dayXp, formatDate, uid } from '@/lib/logic';
 import { levelFromXp, rewardStates, streakOf, totalXpOf } from '@/lib/xp';
@@ -150,25 +151,7 @@ export default function RewardsPage() {
         </Link>
       </header>
 
-      <div className="level-card">
-        <div className="row">
-          <div>
-            <div className="level-tag">Niveau</div>
-            <div className="level-number mono">{level.level}</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div className="level-xp mono">
-              {level.intoLevel} / {level.needed} XP
-            </div>
-            <div className="level-xp mono" style={{ opacity: 0.65 }}>
-              {level.total} XP au total
-            </div>
-          </div>
-        </div>
-        <div className="bar">
-          <i style={{ width: `${Math.round(level.progress * 100)}%` }} />
-        </div>
-      </div>
+      <LevelCard level={level} />
 
       {next ? (
         <section className="section">

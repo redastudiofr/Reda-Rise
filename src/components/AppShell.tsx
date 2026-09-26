@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import DataProvider, { useData } from './DataProvider';
 import TabBar from './TabBar';
 import Loader from './Loader';
+import LevelUp from './LevelUp';
 
 function useServiceWorker() {
   useEffect(() => {
@@ -27,6 +28,7 @@ function Booted({ children }: { children: React.ReactNode }) {
     <>
       <div className="shell">{children}</div>
       <TabBar />
+      <LevelUp />
     </>
   );
 }

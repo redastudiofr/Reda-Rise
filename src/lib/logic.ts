@@ -82,62 +82,9 @@ export const TASKS: Task[] = [
 
 export const MAX_DAY_XP = TASKS.reduce((a, t) => a + t.xp, 0);
 
-export type Level = { name: string; min: number };
-
-export const LEVELS: Level[] = [
-  { name: 'Fondation', min: 0 },
-  { name: 'Régularité', min: 600 },
-  { name: 'Discipline', min: 1800 },
-  { name: 'Performance', min: 4000 },
-  { name: 'Elite', min: 8000 },
-];
-
 export function dayXp(entry?: DailyEntry): number {
   if (!entry) return 0;
   return TASKS.reduce((a, t) => a + (entry.tasks?.[t.id] ? t.xp : 0), 0);
-}
-
-export function totalXp(daily: Record<string, DailyEntry>): number {
-  return Object.values(daily).reduce((a, e) => a + dayXp(e), 0);
-}
-
-export function levelInfo(xp: number) {
-  let index = 0;
-  for (let i = 0; i < LEVELS.length; i++) if (xp >= LEVELS[i].min) index = i;
-  const current = LEVELS[index];
-  const next = LEVELS[index + 1] ?? null;
-  const span = next ? next.min - current.min : 1;
-  const progress = next ? Math.min(1, (xp - current.min) / span) : 1;
-  return {
-    index,
-    current,
-    next,
-    progress,
-    remaining: next ? Math.max(0, next.min - xp) : 0,
-  };
-}
-
-/** A day counts for the streak when at least 60 % of the checklist XP is earned. */
-export function isDaySuccessful(entry?: DailyEntry): boolean {
-  return dayXp(entry) >= MAX_DAY_XP * 0.6;
-}
-
-export function currentStreak(daily: Record<string, DailyEntry>, tz: string): number {
-  const today = todayKey(tz);
-  let streak = 0;
-  let cursor = isDaySuccessful(daily[today]) ? today : shiftKey(today, -1);
-  while (isDaySuccessful(daily[cursor])) {
-    streak++;
-    cursor = shiftKey(cursor, -1);
-  }
-  return streak;
-}
-
-export function last7Rate(daily: Record<string, DailyEntry>, tz: string): number {
-  const today = todayKey(tz);
-  let sum = 0;
-  for (let i = 0; i < 7; i++) sum += dayXp(daily[shiftKey(today, -i)]);
-  return Math.round((sum / (MAX_DAY_XP * 7)) * 100);
 }
 
 /* ---------- workouts ---------- */

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useData } from '@/components/DataProvider';
-import Curve from '@/components/Curve';
+import ProgressPanel from '@/components/ProgressPanel';
 import XpBurst from '@/components/XpBurst';
 import ObjectiveSheet, { type ObjectiveDraft } from '@/components/ObjectiveSheet';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -13,7 +13,6 @@ import {
   MAX_DAY_XP,
   TASKS,
   dayXp,
-  formatDate,
   shiftKey,
   todayKey,
   todayPlan,
@@ -21,18 +20,13 @@ import {
   workoutOn,
 } from '@/lib/logic';
 import {
-  METRICS,
-  RANGES,
   categoryLabel,
   isDone,
   levelFromXp,
   objectivesForDate,
-  series,
   streakOf,
   totalXpOf,
   xpOnDate,
-  type MetricId,
-  type RangeId,
 } from '@/lib/xp';
 import { deleteQuest } from '@/lib/quests';
 import { localNow } from '@/lib/schedule';
@@ -127,8 +121,6 @@ export default function TodayPage() {
   const logged = workoutOn(data.workouts, key);
   const dayCheck = data.settings.notifications.dayCheck;
 
-  const [metric, setMetric] = useState<MetricId>('xpCumule');
-  const [range, setRange] = useState<RangeId>('30j');
   const [burst, setBurst] = useState<{ id: number; amount: number; title: string } | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -250,18 +242,6 @@ export default function TodayPage() {
       today: xpOnDate(data, key, dayXp),
     };
   }, [data, tz, key]);
-
-  const points = useMemo(
-    () => series(data, tz, metric, range, dayXp),
-    [data, tz, metric, range],
-  );
-
-  const suffix = metric === 'niveau' ? '' : metric === 'objectifs' ? '' : ' XP';
-
-  const periodLabel =
-    points.length > 1
-      ? `${formatDate(points[0].date)} → ${formatDate(points[points.length - 1].date)}`
-      : undefined;
 
   /** Flips completion for today, and drops the photo when it is un-validated. */
   function setObjectiveDone(o: Objective, done: boolean, photo?: string) {
@@ -470,16 +450,20 @@ export default function TodayPage() {
                 <b className="mono">+{stats.today}</b>
                 <span>XP aujourd&apos;hui</span>
               </div>
-              <div>
+              <Link href="/progression" className="dash-level-link">
                 <b className="mono">Niv. {stats.level.level}</b>
-                <span className="mono">
-                  {stats.level.intoLevel} / {stats.level.needed} XP
-                </span>
+                <span>{stats.level.title}</span>
+              </Link>
+            </div>
+            <Link href="/progression" className="dash-level-row" aria-label="Voir ma progression">
+              <div className="bar dash-level-bar" aria-hidden>
+                <i style={{ width: `${Math.round(stats.level.progress * 100)}%` }} />
               </div>
-            </div>
-            <div className="bar dash-level-bar" aria-hidden>
-              <i style={{ width: `${Math.round(stats.level.progress * 100)}%` }} />
-            </div>
+              <span className="mono">
+                {stats.level.intoLevel} / {stats.level.needed} XP ·{' '}
+                {Math.floor(stats.level.progress * 100)} %
+              </span>
+            </Link>
           </section>
 
           {status === 'local' && pending ? (
@@ -698,29 +682,15 @@ export default function TodayPage() {
           </section>
 
           <section className="section">
-            <h2 className="section-title">Progression</h2>
-            <div className="card">
-              <div className="segmented">
-                {METRICS.map((m) => (
-                  <button key={m.id} data-on={m.id === metric} onClick={() => setMetric(m.id)}>
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-              <div className="pill-row" style={{ marginTop: 12 }}>
-                {RANGES.map((r) => (
-                  <button
-                    key={r.id}
-                    className="pill"
-                    data-on={r.id === range}
-                    onClick={() => setRange(r.id)}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-              <Curve points={points} suffix={suffix} periodLabel={periodLabel} />
+            <div className="row dash-head">
+              <h2 className="section-title" style={{ margin: 0 }}>
+                Progression
+              </h2>
+              <Link href="/progression" className="link-sm">
+                Voir le détail
+              </Link>
             </div>
+            <ProgressPanel />
           </section>
 
           <section className="section">

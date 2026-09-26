@@ -9,10 +9,15 @@ front, routes API et planification des rappels.
 
 Cinq onglets, pensés pour le pouce sur mobile.
 
-- **Aujourd'hui** — XP total, niveau (Fondation, Régularité, Discipline,
-  Performance, Elite) avec barre de progression, jours d'affilée, taux de
-  réussite du jour et sur 7 jours, séance du jour, checklist quotidienne de
-  10 tâches valant 130 XP au total.
+- **Aujourd'hui** — progression des objectifs du jour, niveau et son nom,
+  jours d'affilée, séance du jour, checklist quotidienne de 10 tâches valant
+  130 XP au total.
+- **Progression** (`/progression`) — niveau, nom et palier (Bronze, Argent,
+  Or, Platine, Diamant, Mythique), XP vers le niveau suivant, statistiques,
+  XP gagnée jour par jour, courbe de progression et barème de l'XP. L'XP
+  vient des objectifs, des tâches Discipline, des finances et de bonus
+  (journée complète, séance enregistrée, journée bouclée, paliers de série).
+  Elle est recalculée depuis les données enregistrées : rien ne peut dériver.
 - **Semaine** — le planning hebdomadaire fixe. Lundi jambes, mardi dos et
   biceps, mercredi repos actif, jeudi pectoraux et triceps, vendredi épaules et
   abdos, samedi jambes, dimanche repos. De la marche à chaque jour. Saisie série
@@ -193,7 +198,8 @@ l'installation donne l'icône et le mode plein écran.
 ```
 src/
   app/
-    page.tsx               Aujourd'hui (checklist, XP, niveau, séance du jour)
+    page.tsx               Aujourd'hui (objectifs, checklist, XP, niveau, séance du jour)
+    progression/           Niveau, statistiques, courbe et paliers
     semaine/               Planning hebdomadaire, saisie et historique
     objectifs/             Objectifs personnels
     progres/               Mensurations, courbes et records
@@ -208,7 +214,8 @@ src/
       cron/notify          Envoi des rappels dus
   lib/
     program.ts             Le planning de la semaine et ses exercices
-    logic.ts               XP, niveaux, séries, records, suggestions de charge
+    logic.ts               Checklist, records, suggestions de charge
+    xp.ts                  XP par jour, bonus, niveaux et noms, séries, statistiques
     schedule.ts            Calcul des rappels dus
     push.ts                Envoi web-push (VAPID)
     db.ts                  Postgres, avec repli en mémoire
