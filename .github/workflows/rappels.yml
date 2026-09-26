@@ -1,0 +1,21 @@
+name: Rappels
+
+# Le plan Hobby de Vercel ne déclenche un cron qu'une fois par jour, ce qui est
+# insuffisant pour des rappels à l'heure près. Ce workflow appelle la route
+# toutes les 15 minutes. La route ne fait rien tant qu'aucun rappel n'est dû, et
+# déduplique chaque créneau, donc un appel de trop est sans conséquence.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  notifier:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Déclencher les rappels dus
+        run: |
+          curl -sS -f -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET || 'vejhEjq1NCHLlcS1NOVTATLH' }}" \
+            https://muscu-tracker-phi.vercel.app/api/cron/notify
