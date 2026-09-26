@@ -9,7 +9,7 @@ export default function Loader() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/icons/icon-192.png" alt="" width={72} height={72} />
       </div>
-      <div className="boot-name">REDA RISE</div>
+      <div className="boot-name">TELOS RS</div>
       <div className="boot-bar">
         <i />
       </div>
