@@ -189,6 +189,7 @@ export function memberRoute<C = unknown>(handler: Handler<C>) {
     try {
       return await handler(req, me, ctx);
     } catch (err) {
+      if ((err as Error).message === 'too large') return fail('Requête trop volumineuse.', 413);
       console.error('[network]', err);
       return fail('Erreur serveur.', 500);
     }

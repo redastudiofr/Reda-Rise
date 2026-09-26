@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import NetNav from '@/components/network/NetNav';
 import { useNet } from '@/components/network/NetContext';
+import NetSettings from '@/components/network/NetSettings';
 import ProfileEditor from '@/components/network/ProfileEditor';
 import { api } from '@/lib/network/client';
 
@@ -38,6 +39,7 @@ export default function MyProfilePage() {
     <div className="net">
       <NetNav title="Mon profil" sub={member?.email ? `Connecté : ${member.email} (jamais affiché)` : undefined} />
       <ProfileEditor />
+      <NetSettings />
 
       <section className="section">
         <h2 className="section-title">Compte</h2>

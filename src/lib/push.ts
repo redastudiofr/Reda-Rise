@@ -36,7 +36,11 @@ export type PushPayload = {
   url?: string;
 };
 
-export async function sendTo(sub: PushSub, payload: PushPayload): Promise<boolean> {
+export async function sendTo(
+  sub: PushSub,
+  payload: PushPayload,
+  onGone: (endpoint: string) => Promise<void> = removeSub,
+): Promise<boolean> {
   configure();
   try {
     await webpush.sendNotification(sub as never, JSON.stringify(payload), { TTL: 3600 });
@@ -44,7 +48,7 @@ export async function sendTo(sub: PushSub, payload: PushPayload): Promise<boolea
   } catch (err) {
     const status = (err as { statusCode?: number }).statusCode;
     // The endpoint is gone: drop the subscription so it stops being retried.
-    if (status === 404 || status === 410) await removeSub(sub.endpoint);
+    if (status === 404 || status === 410) await onGone(sub.endpoint);
     return false;
   }
 }

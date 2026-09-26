@@ -7,6 +7,8 @@ import { useNet } from './NetContext';
 const LINKS = [
   { href: '/network', label: 'Découvrir' },
   { href: '/network/carte', label: 'Carte' },
+  { href: '/network/evenements', label: 'Événements' },
+  { href: '/network/messages', label: 'Messages' },
   { href: '/network/profil', label: 'Mon profil' },
 ];
 

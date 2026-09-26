@@ -141,3 +141,26 @@ export async function hit(key: string, limit: number, windowSec: number): Promis
   if (Math.random() < 0.02) await p.query('delete from net_rate where reset_at < now()');
   return Number(r.rows[0].count) <= limit;
 }
+
+/** Number of documents in each of several partitions, in one query. */
+export async function countByPart(collection: string, parts: string[]): Promise<Map<string, number>> {
+  if (parts.length === 0) return new Map();
+  const r = await (await pool()).query(
+    'select part, count(*)::int as n from net_docs where collection = $1 and part = any($2) group by part',
+    [collection, parts],
+  );
+  return new Map(r.rows.map((row: { part: string; n: number }) => [row.part, Number(row.n)]));
+}
+
+/**
+ * Merges `patch` into a document's data only if data[field] (a number) is
+ * below `value` — so two messages sent at once cannot move a conversation's
+ * last seq backwards.
+ */
+export async function patchIfAbove(collection: string, id: string, field: string, value: number, patch: Record<string, unknown>): Promise<void> {
+  await (await pool()).query(
+    `update net_docs set data = data || $4::jsonb
+     where collection = $1 and id = $2 and coalesce((data ->> $3)::bigint, 0) < $5`,
+    [collection, id, field, JSON.stringify(patch), value],
+  );
+}

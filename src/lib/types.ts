@@ -70,6 +70,8 @@ export type CalEvent = {
   /** Minutes before the start; an all-day item counts from 09:00. */
   reminders: number[];
   createdAt: string;
+  /** Set when the event was added from the Network, to avoid adding it twice. */
+  networkEventId?: string;
 };
 
 export type TaskPriority = 'basse' | 'normale' | 'haute' | 'urgente';

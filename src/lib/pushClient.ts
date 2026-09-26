@@ -55,14 +55,17 @@ export async function readPushState(): Promise<PushState> {
 /**
  * Asks for permission (must run from a tap), subscribes this device and
  * registers it with the server. Resolves to the resulting state.
+ * The Network registers the device for a member instead, on its own routes.
  */
-export async function enablePush(): Promise<PushState> {
+export async function enablePush(
+  routes: { key: string; register: string } = { key: '/api/push/key', register: '/api/push/subscribe' },
+): Promise<PushState> {
   const perm = await Notification.requestPermission();
   if (perm === 'denied') return 'denied';
   if (perm !== 'granted') return 'off';
 
   const reg = await navigator.serviceWorker.ready;
-  const res = await fetch('/api/push/key');
+  const res = await fetch(routes.key);
   const { key } = (await res.json()) as { key: string };
   const sub =
     (await reg.pushManager.getSubscription()) ??
@@ -70,7 +73,7 @@ export async function enablePush(): Promise<PushState> {
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(key) as unknown as BufferSource,
     }));
-  const saved = await fetch('/api/push/subscribe', {
+  const saved = await fetch(routes.register, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ subscription: sub.toJSON() }),
