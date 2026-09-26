@@ -110,6 +110,25 @@ async function ensureSchema(pool: Pool): Promise<void> {
       );
     `);
     await pool.query(`
+      create table if not exists net_docs (
+        collection text not null,
+        id text not null,
+        part text not null default '',
+        seq bigserial,
+        data jsonb not null,
+        created_at timestamptz not null default now(),
+        primary key (collection, id)
+      );
+    `);
+    await pool.query('create index if not exists net_docs_part on net_docs (collection, part, seq)');
+    await pool.query(`
+      create table if not exists net_rate (
+        key text primary key,
+        count integer not null,
+        reset_at timestamptz not null
+      );
+    `);
+    await pool.query(`
       create table if not exists bank_links (
         id text primary key,
         sealed text not null,
@@ -126,6 +145,19 @@ async function ensureSchema(pool: Pool): Promise<void> {
     mem.ready = null;
     throw err;
   }
+}
+
+/**
+ * The Postgres pool with the schema in place, or null without a database.
+ * The Network (network/store.ts) only runs on a real database: it is shared
+ * between people, so an in-memory copy per server instance would lose or
+ * split their messages.
+ */
+export async function readyPool(): Promise<Pool | null> {
+  const pool = await getPool();
+  if (!pool) return null;
+  await ensureSchema(pool);
+  return pool;
 }
 
 /* ---------- app data ---------- */

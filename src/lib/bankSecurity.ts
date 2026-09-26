@@ -19,7 +19,7 @@ const PUBLIC_DEFAULT_SECRET = 'aTNau--fShcJ1whzRdM_IUJpZPQvTvUojY6nxhkATlk';
 
 export type Blocker = { id: string; message: string };
 
-function customAuthSecret(): string | null {
+export function customAuthSecret(): string | null {
   const s = (process.env.AUTH_SECRET ?? '').trim();
   if (s.length < 32 || s === PUBLIC_DEFAULT_SECRET || s === 'change-moi') return null;
   return s;

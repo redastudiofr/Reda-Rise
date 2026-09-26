@@ -10,6 +10,7 @@ const TABS = [
   { href: '/calendrier', label: 'Calendrier', icon: 'calendar' },
   { href: '/finances', label: 'Finances', icon: 'wallet' },
   { href: '/entrepreneuriat', label: 'Business', icon: 'growth' },
+  { href: '/network', label: 'Network', icon: 'network' },
 ] as const;
 
 function Icon({ name }: { name: string }) {
@@ -44,6 +45,15 @@ function Icon({ name }: { name: string }) {
           <rect x="3" y="4.5" width="18" height="16" rx="3" />
           <path d="M3 9.5h18M8 2.5v4M16 2.5v4" />
           <path d="M7.5 13h3M7.5 16.8h3M13.5 13h3M13.5 16.8h3" />
+        </svg>
+      );
+    case 'network':
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="6" r="2.6" />
+          <circle cx="5.5" cy="17" r="2.6" />
+          <circle cx="18.5" cy="17" r="2.6" />
+          <path d="M10.7 8.3 6.8 14.7M13.3 8.3l3.9 6.4M8.1 17h7.8" />
         </svg>
       );
     default:
