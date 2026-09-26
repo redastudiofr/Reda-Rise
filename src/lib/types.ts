@@ -316,6 +316,8 @@ export type NotificationSettings = {
   sleep: { enabled: boolean; time: string };
   workout: { enabled: boolean; time: string; days: number[] };
   objectives: { enabled: boolean; time: string };
+  /** Evening checks that only fire while some of today's objectives are still open. */
+  dayCheck: { enabled: boolean; times: string[] };
   review: { enabled: boolean; time: string };
 };
 

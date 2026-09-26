@@ -159,31 +159,37 @@ export default function ObjectiveSheet({
           </span>
         </button>
 
-        {more ? (
-          <div className="grid-2">
-            <label className="field">
-              <span>Récompense XP</span>
-              <input
-                className="input"
-                type="number"
-                inputMode="numeric"
-                value={xp}
-                onChange={(e) => setXp(e.target.value)}
-              />
-            </label>
-            <label className="field">
-              <span>Heure</span>
-              <input
-                className="input"
-                type="time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-              />
-            </label>
+        <label className="field">
+          <span>Heure — facultatif</span>
+          <div className="time-row">
+            <input
+              className="input"
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+            />
+            {time ? (
+              <button className="btn btn-ghost btn-sm" onClick={() => setTime('')}>
+                Retirer
+              </button>
+            ) : null}
           </div>
+        </label>
+
+        {more ? (
+          <label className="field">
+            <span>Récompense XP</span>
+            <input
+              className="input"
+              type="number"
+              inputMode="numeric"
+              value={xp}
+              onChange={(e) => setXp(e.target.value)}
+            />
+          </label>
         ) : (
           <button className="link-sm" style={{ marginTop: 12 }} onClick={() => setMore(true)}>
-            Options — XP et heure
+            Option — récompense XP
           </button>
         )}
 

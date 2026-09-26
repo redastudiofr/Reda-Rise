@@ -231,6 +231,7 @@ export const DEFAULT_SETTINGS: Settings = {
     sleep: { enabled: true, time: '22:30' },
     workout: { enabled: true, time: '17:30', days: [1, 2, 4, 5, 6] },
     objectives: { enabled: true, time: '18:00' },
+    dayCheck: { enabled: true, times: ['20:00', '22:00'] },
     review: { enabled: true, time: '21:30' },
   },
 };
@@ -321,6 +322,7 @@ export function normalizeData(raw: unknown): AppData {
         sleep: { ...base.settings.notifications.sleep, ...(n.sleep ?? {}) },
         workout: { ...base.settings.notifications.workout, ...(n.workout ?? {}) },
         objectives: { ...base.settings.notifications.objectives, ...(n.objectives ?? {}) },
+        dayCheck: { ...base.settings.notifications.dayCheck, ...(n.dayCheck ?? {}) },
         review: { ...base.settings.notifications.review, ...(n.review ?? {}) },
       },
     },

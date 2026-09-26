@@ -1,5 +1,6 @@
-import type { Settings } from './types';
+import type { AppData, Settings } from './types';
 import type { PushPayload } from './push';
+import { isDone, objectivesForDate } from './xp';
 
 /**
  * Turns the user's reminder settings into the notifications that are due right
@@ -162,4 +163,55 @@ export function dueNotifications(settings: Settings, now = new Date()): DueNotif
   }
 
   return out;
+}
+
+/** "A", "A et B", "A, B et 2 autres" — keeps the notification body short. */
+function listTitles(titles: string[]): string {
+  const shown = titles.slice(0, 2).map((t) => `« ${t} »`);
+  const rest = titles.length - shown.length;
+  if (rest > 0) return `${shown.join(', ')} et ${rest} autre${rest > 1 ? 's' : ''}`;
+  return shown.join(' et ');
+}
+
+/**
+ * Evening checks on today's objectives (20:00 and 22:00 by default). A check
+ * only fires while at least one objective is still open, and names what is
+ * left — completed objectives never trigger anything. A day the user closed
+ * by hand is left alone.
+ */
+export function objectiveReminders(data: AppData, now = new Date()): DueNotification[] {
+  const check = data.settings.notifications.dayCheck;
+  if (!check?.enabled) return [];
+
+  const { dateKey, minutes } = localNow(data.settings.timezone, now);
+  const entry = data.daily[dateKey];
+  if (entry?.closed) return [];
+
+  const open = objectivesForDate(data.objectives, dateKey).filter((o) => !isDone(entry, o.id));
+  if (open.length === 0) return [];
+
+  const slots = check.times
+    .map(parseTime)
+    .filter((t): t is number => t !== null)
+    .sort((a, b) => a - b);
+  // Only the latest slot that is due: a late cron run never sends both at once.
+  const due = slots.filter((t) => isDue(minutes, t)).pop();
+  if (due === undefined) return [];
+
+  const last = due === slots[slots.length - 1] && slots.length > 1;
+  const count = open.length;
+  const titles = listTitles(open.map((o) => o.title));
+  return [
+    {
+      key: `daycheck:${dateKey}:${due}`,
+      title: last ? 'Dernier rappel de la journée' : 'Objectifs du jour',
+      body:
+        count === 1
+          ? `Il te reste ${titles} avant de finir la journée.`
+          : `Il te reste ${count} objectifs : ${titles}.`,
+      // Same tag for both checks: the 22h reminder replaces the 20h one.
+      tag: 'day-check',
+      url: '/',
+    },
+  ];
 }

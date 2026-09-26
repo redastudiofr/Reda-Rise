@@ -3004,3 +3004,456 @@ a {
     font-size: 12.5px;
   }
 }
+
+/* ---------- dashboard ---------- */
+
+/* The dashboard alone widens on desktop; every other page keeps its column. */
+@media (min-width: 960px) {
+  .shell:has(> .dash) {
+    max-width: 1040px;
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+}
+
+.dash-date {
+  text-transform: capitalize;
+}
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 28px;
+}
+
+@media (min-width: 960px) {
+  .dash-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .dash-main {
+    position: sticky;
+    top: 16px;
+  }
+
+  .dash-side > .section:first-child {
+    margin-top: 0;
+  }
+}
+
+/* hero: day progress, streak, XP, level */
+
+.dash-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  padding: 18px;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(56, 116, 220, 0.16), transparent 58%),
+    linear-gradient(158deg, #121826 0%, var(--surface) 64%);
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.dash-hero[data-complete='true'] {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 1px rgba(77, 134, 234, 0.12), 0 12px 40px -18px rgba(77, 134, 234, 0.55);
+  animation: dash-glow 1.2s ease;
+}
+
+.dash-hero-top {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.dash-ring {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  flex: 0 0 104px;
+}
+
+.dash-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.dash-ring circle {
+  fill: none;
+  stroke-width: 8;
+}
+
+.dash-ring-track {
+  stroke: #1b2029;
+}
+
+.dash-ring-fill {
+  stroke: var(--accent-strong);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  filter: drop-shadow(0 0 6px rgba(77, 134, 234, 0.35));
+}
+
+.dash-ring-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+
+.dash-ring-label b {
+  font-size: 22px;
+  font-weight: 680;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.dash-ring-label span {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.dash-hero-text {
+  min-width: 0;
+}
+
+.dash-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.dash-count {
+  font-size: 34px;
+  font-weight: 690;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  margin-top: 2px;
+}
+
+.dash-count span {
+  color: var(--muted-2);
+  font-weight: 560;
+}
+
+.dash-hero-line {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-hero[data-complete='true'] .dash-hero-line {
+  color: var(--accent-strong);
+}
+
+.dash-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dash-kpis > div {
+  text-align: center;
+  min-width: 0;
+}
+
+.dash-kpis > div + div {
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dash-kpis b {
+  display: block;
+  font-size: 17px;
+  font-weight: 640;
+  letter-spacing: -0.015em;
+}
+
+.dash-kpis span {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.dash-level-bar {
+  height: 4px;
+  margin-top: 12px;
+}
+
+.dash-hero + .banner {
+  margin-top: 12px;
+}
+
+/* objective list */
+
+.dash-head {
+  margin-bottom: 10px;
+}
+
+.dash-filter {
+  margin-bottom: 10px;
+}
+
+.dash-filter span {
+  margin-left: 4px;
+  font-size: 11.5px;
+  color: var(--muted-2);
+}
+
+.dash-filter button[data-on='true'] span {
+  color: var(--accent-strong);
+}
+
+.dash-obj .check {
+  position: relative;
+  padding: 14px;
+  transition: background 0.25s ease, border-color 0.25s ease, transform 0.12s ease;
+}
+
+.dash-obj .box {
+  border-radius: 99px;
+  width: 23px;
+  height: 23px;
+  flex-basis: 23px;
+}
+
+.dash-obj .check-label {
+  transition: color 0.25s ease;
+  overflow-wrap: anywhere;
+}
+
+.dash-obj[data-done='true'] .check-label {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: rgba(135, 143, 156, 0.5);
+}
+
+.dash-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.dash-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dash-cat::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--cat, var(--muted-2));
+}
+
+.dash-cat[data-cat='sport'] { --cat: #4fb286; }
+.dash-cat[data-cat='entrepreneuriat'] { --cat: #d9a54a; }
+.dash-cat[data-cat='travail'] { --cat: #4d86ea; }
+.dash-cat[data-cat='etudes'] { --cat: #9a7cf0; }
+.dash-cat[data-cat='discipline'] { --cat: #e07a6a; }
+.dash-cat[data-cat='habitudes'] { --cat: #4bb3c4; }
+.dash-cat[data-cat='personnel'] { --cat: #c47fb4; }
+
+.dash-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dash-time[data-late='true'] {
+  color: #e2a15a;
+}
+
+.dash-actions .dash-danger {
+  color: #e0806f;
+}
+
+.dash-empty {
+  display: grid;
+  gap: 4px;
+  text-align: center;
+  padding: 22px 18px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.dash-empty b {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* validation micro-animations */
+
+.dash-obj[data-just='true'] .box {
+  animation: dash-pop 0.42s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.dash-obj[data-just='true'] .dash-tick {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: dash-draw 0.32s 0.08s ease forwards;
+}
+
+.dash-obj[data-just='true'] .check {
+  overflow: hidden;
+}
+
+.dash-obj[data-just='true'] .check::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(77, 134, 234, 0.22) 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: dash-sweep 0.7s ease forwards;
+  pointer-events: none;
+}
+
+.dash-obj[data-just='true'] .xp-chip {
+  animation: dash-pop 0.42s 0.1s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.dash-float {
+  position: absolute;
+  right: 16px;
+  top: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--accent-strong);
+  pointer-events: none;
+  animation: dash-float 0.9s ease-out forwards;
+}
+
+.dash-list .dash-obj {
+  animation: dash-in 0.28s ease both;
+}
+
+@keyframes dash-pop {
+  0% { transform: scale(0.7); }
+  55% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+@keyframes dash-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes dash-sweep {
+  to { transform: translateX(100%); }
+}
+
+@keyframes dash-float {
+  0% { opacity: 0; transform: translateY(6px); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-14px); }
+}
+
+@keyframes dash-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes dash-glow {
+  0% { box-shadow: 0 0 0 0 rgba(77, 134, 234, 0.5); }
+  100% { box-shadow: 0 0 0 1px rgba(77, 134, 234, 0.12), 0 12px 40px -18px rgba(77, 134, 234, 0.55); }
+}
+
+/* evening reminders */
+
+.dash-remind {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px dashed var(--border);
+  border-radius: 13px;
+}
+
+.dash-remind[data-state='on'] {
+  border-style: solid;
+  border-color: var(--border-soft);
+  background: var(--surface);
+}
+
+.dash-remind-icon {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-dim);
+  color: var(--accent-strong);
+}
+
+.dash-remind[data-state='denied'] .dash-remind-icon,
+.dash-remind[data-state='unsupported'] .dash-remind-icon {
+  background: var(--surface-2);
+  color: var(--muted-2);
+}
+
+.dash-remind-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-remind-text b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 580;
+}
+
+.dash-remind-text span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.dash-remind-text .dash-remind-error {
+  color: #e0806f;
+}
+
+.time-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.time-row .btn {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 380px) {
+  .dash-hero-top {
+    gap: 14px;
+  }
+
+  .dash-ring {
+    width: 88px;
+    height: 88px;
+    flex-basis: 88px;
+  }
+
+  .dash-count {
+    font-size: 28px;
+  }
+}
