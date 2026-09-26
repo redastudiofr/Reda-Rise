@@ -121,8 +121,8 @@ export default function InvestPage() {
             {holdings.length > 0 ? ` · ${formatMoney(totals.value)}` : ''}
           </p>
         </div>
-        <Link href="/entrepreneuriat" className="link-sm">
-          Business
+        <Link href="/finances" className="link-sm">
+          Finances
         </Link>
       </header>
 

@@ -32,7 +32,16 @@ function monthLong(month: string): string {
  * Income next to spending, month by month. Hover, tap or use the arrow keys
  * on a month to read both amounts and the balance.
  */
-export default function FlowChart({ flows, height = 190 }: { flows: MonthFlow[]; height?: number }) {
+export default function FlowChart({
+  flows,
+  height = 190,
+  labels = { revenus: 'Revenus', depenses: 'Dépenses' },
+}: {
+  flows: MonthFlow[];
+  height?: number;
+  /** Series names, e.g. « Chiffre d’affaires » for a company. */
+  labels?: { revenus: string; depenses: string };
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(340);
   const [active, setActive] = useState<number | null>(null);
@@ -71,10 +80,10 @@ export default function FlowChart({ flows, height = 190 }: { flows: MonthFlow[];
     <div className="flow" ref={ref}>
       <div className="flow-legend">
         <span>
-          <i style={{ background: FLOW_COLORS.revenus }} /> Revenus
+          <i style={{ background: FLOW_COLORS.revenus }} /> {labels.revenus}
         </span>
         <span>
-          <i style={{ background: FLOW_COLORS.depenses }} /> Dépenses
+          <i style={{ background: FLOW_COLORS.depenses }} /> {labels.depenses}
         </span>
       </div>
       {empty ? (
@@ -86,7 +95,7 @@ export default function FlowChart({ flows, height = 190 }: { flows: MonthFlow[];
             height={height}
             viewBox={`0 0 ${width} ${height}`}
             role="img"
-            aria-label={`Revenus et dépenses sur ${flows.length} mois`}
+            aria-label={`${labels.revenus} et ${labels.depenses.toLowerCase()} sur ${flows.length} mois`}
             tabIndex={0}
             onPointerLeave={() => setActive(null)}
             onBlur={() => setActive(null)}

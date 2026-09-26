@@ -40,8 +40,11 @@ Cinq onglets, pensés pour le pouce sur mobile, dont le profil.
   dépenses du mois et de la semaine, revenus, épargne, évolution mensuelle,
   catégories, principales dépenses, objectif d'épargne mensuel. Voir
   « Connexion bancaire » plus bas.
-- **Business** — projets, finances personnelles, épargne, investissements,
-  comptes bancaires, abonnements.
+- **Business** (`/entrepreneuriat`) — réservé aux entreprises. Plusieurs
+  entreprises, chacune avec son tableau de bord : CA, dépenses, bénéfice
+  estimé, marge, trésorerie, évolution mensuelle (graphiques), objectifs (CA,
+  bénéfice ou chiffre libre), étapes, projets et tâches (partagés avec le
+  calendrier), opérations.
 - **Profil** — identité, récompenses et classement, mensurations.
 - **Réglages** — profil, fuseau horaire, heures de tous les rappels, activation
   des notifications push sur l'appareil, notification de test.
@@ -220,7 +223,8 @@ src/
     quetes/                Toutes les quêtes et objectifs
     calendrier/            Agenda : vues, tâches, projets
     finances/              Comptes, dépenses, abonnements, épargne
-    entrepreneuriat/       Projets et finances (banque, investir)
+    entrepreneuriat/       Entreprises et tableau de bord par entreprise
+    finances/investir/     Portefeuille d'investissement
     profil/                Profil, mensurations ; recompenses/ et classement
     reglages/              Profil, rappels, activation push
     login/                 Écran de connexion

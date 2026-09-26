@@ -11,11 +11,14 @@ import SubSheet from '@/components/finance/SubSheet';
 import GoalSheet from '@/components/finance/GoalSheet';
 import { formatShort, shiftKey, todayKey, uid } from '@/lib/logic';
 import {
+  checkGoalAchievements,
   expensesByCategory,
   formatMoney,
   formatMoneyExact,
+  investedTotal,
   monthKey,
   previousMonth,
+  savedTotal,
 } from '@/lib/business';
 import {
   FREQUENCIES,
@@ -82,6 +85,7 @@ export default function FinancesPage() {
   const [subSheet, setSubSheet] = useState<Subscription | 'new' | null>(null);
   const [goalSheet, setGoalSheet] = useState<SavingsGoal | 'new' | null>(null);
   const [contributing, setContributing] = useState<SavingsGoal | null>(null);
+  const [pot, setPot] = useState<'epargne' | 'investissement' | null>(null);
   const [openSub, setOpenSub] = useState<string | null>(null);
 
   useEffect(() => {
@@ -216,6 +220,22 @@ export default function FinancesPage() {
     setGoalSheet(null);
   }
 
+  /** General savings pot and simple investment tracking (moved here from Business). */
+  function addToPot(kind: 'epargne' | 'investissement', amount: number) {
+    update((d) => {
+      if (kind === 'investissement') {
+        return { ...d, investments: { ...d.investments, entries: [{ id: uid(), date: today, amount }, ...d.investments.entries] } };
+      }
+      const entries = [{ id: uid(), date: today, amount }, ...d.savings.entries];
+      return {
+        ...d,
+        savings: { ...d.savings, entries },
+        financialGoals: checkGoalAchievements(d.financialGoals, entries.reduce((a, e) => a + e.amount, 0), today),
+      };
+    });
+    setPot(null);
+  }
+
   function addToGoal(goal: SavingsGoal, amount: number) {
     update((d) => ({
       ...d,
@@ -266,6 +286,14 @@ export default function FinancesPage() {
             setGoalSheet(null);
           }}
           onClose={() => setGoalSheet(null)}
+        />
+      ) : null}
+      {pot ? (
+        <QuickAmount
+          title={pot === 'epargne' ? 'Épargne générale' : 'Investissements'}
+          allowWithdraw
+          onConfirm={(amount) => addToPot(pot, amount)}
+          onClose={() => setPot(null)}
         />
       ) : null}
       {contributing ? (
@@ -694,6 +722,47 @@ export default function FinancesPage() {
           </div>
 
           <section className="section fin-first">
+            <h2 className="section-title">Suivi global</h2>
+            <div className="card fin-list">
+              <div className="fin-tx">
+                <span className="fin-acc-main">
+                  <b>Épargne générale</b>
+                  <small>Tous les versements, objectifs compris</small>
+                </span>
+                <b className="mono">{formatMoneyExact(savedTotal(data.savings))}</b>
+                <button className="btn btn-sm btn-ghost" onClick={() => setPot('epargne')}>±</button>
+              </div>
+              <div className="fin-tx">
+                <span className="fin-acc-main">
+                  <b>Investissements</b>
+                  <small>
+                    Suivi simple · <Link href="/finances/investir" className="link-sm">portefeuille détaillé</Link>
+                  </small>
+                </span>
+                <b className="mono">{formatMoneyExact(investedTotal(data.investments))}</b>
+                <button className="btn btn-sm btn-ghost" onClick={() => setPot('investissement')}>±</button>
+              </div>
+            </div>
+            {data.financialGoals.length > 0 ? (
+              <div className="card fin-list" style={{ marginTop: 10 }}>
+                <div className="fi-sub-h" style={{ paddingTop: 10 }}>Objectifs financiers (épargne générale)</div>
+                {data.financialGoals.map((g) => {
+                  const p = Math.min(1, Math.max(0, savedTotal(data.savings) / g.target));
+                  return (
+                    <div key={g.id} className="fin-mini-goal" style={{ ['--c' as string]: '#4fb286' }}>
+                      <div className="row">
+                        <span>{g.label}</span>
+                        <b className="mono">{g.achievedAt ? 'Atteint' : `${Math.round(p * 100)} %`}</b>
+                      </div>
+                      <div className="bar"><i style={{ width: `${p * 100}%` }} /></div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+          </section>
+
+          <section className="section">
             <h2 className="section-title">Pistes pour épargner</h2>
             <div className="card fin-tips">
               <ul>

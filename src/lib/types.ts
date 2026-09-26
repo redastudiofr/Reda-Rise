@@ -102,6 +102,8 @@ export type AgendaProject = {
   deadline?: string;
   createdAt: string;
   archived?: boolean;
+  /** Company this project belongs to (Business), if any. */
+  companyId?: string;
 };
 
 export type Agenda = {
@@ -183,6 +185,22 @@ export type FinanceEntry = {
   accountId?: string;
 };
 
+/** A measurable company goal. CA and profit are computed from the entries. */
+export type CompanyGoal = {
+  id: string;
+  label: string;
+  metric: 'ca' | 'benefice' | 'custom';
+  period: 'mois' | 'annee';
+  target: number;
+  /** For a custom goal, the figure the user updates by hand. */
+  current?: number;
+  createdAt: string;
+};
+
+/**
+ * A company (historically called "project" — the stored data keeps that
+ * name so nothing is lost). Revenue and expenses live in `entries`.
+ */
 export type Project = {
   id: string;
   name: string;
@@ -195,6 +213,11 @@ export type Project = {
   stage: ProjectStage;
   archived?: boolean;
   entries: FinanceEntry[];
+  color?: string;
+  /** Cash in the bank on `cashStartDate`; the treasury follows the entries from there. */
+  cashStart?: number;
+  cashStartDate?: string;
+  goals?: CompanyGoal[];
 };
 
 /** Amount can be negative to represent a withdrawal. */

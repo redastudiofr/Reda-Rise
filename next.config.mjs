@@ -8,6 +8,7 @@ const nextConfig = {
       { source: '/muscu/:path*', destination: '/', permanent: false },
       // Bank moved from Business to personal finances.
       { source: '/entrepreneuriat/banque', destination: '/finances/banque', permanent: false },
+      { source: '/entrepreneuriat/investir', destination: '/finances/investir', permanent: false },
     ];
   },
   async headers() {
