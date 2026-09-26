@@ -15,9 +15,7 @@ import {
   dayXp,
   shiftKey,
   todayKey,
-  todayPlan,
   uid,
-  workoutOn,
 } from '@/lib/logic';
 import {
   categoryLabel,
@@ -73,14 +71,6 @@ function Clock() {
   );
 }
 
-function Chevron() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 5.5 15.5 12 9 18.5" />
-    </svg>
-  );
-}
-
 /** Day progress as a ring: completed objectives over today's total. */
 function Ring({ done, total }: { done: number; total: number }) {
   const r = 44;
@@ -117,8 +107,6 @@ export default function TodayPage() {
   const tz = data.settings.timezone;
   const key = todayKey(tz);
   const entry = data.daily[key];
-  const plan = todayPlan(tz);
-  const logged = workoutOn(data.workouts, key);
   const dayCheck = data.settings.notifications.dayCheck;
 
   const [burst, setBurst] = useState<{ id: number; amount: number; title: string } | null>(null);
@@ -646,22 +634,6 @@ export default function TodayPage() {
         </div>
 
         <aside className="dash-side">
-          <section className="section">
-            <h2 className="section-title">Séance du jour</h2>
-            <Link href="/muscu" className="card row">
-              <div>
-                <div className="ex-name">
-                  {plan.title}
-                  {logged ? ' · terminée' : ''}
-                </div>
-                <div className="ex-meta">
-                  {plan.rest ? plan.focus : `${plan.exercises.length} exercices · ${plan.focus}`}
-                </div>
-              </div>
-              <Chevron />
-            </Link>
-          </section>
-
           <section className="section">
             <h2 className="section-title">
               Discipline · {checklistXp} / {MAX_DAY_XP} XP

@@ -7,7 +7,6 @@ import { useData } from './DataProvider';
 
 const TABS = [
   { href: '/', label: "Aujourd'hui", icon: 'today' },
-  { href: '/muscu', label: 'Musculation', icon: 'muscu' },
   { href: '/calendrier', label: 'Calendrier', icon: 'calendar' },
   { href: '/entrepreneuriat', label: 'Business', icon: 'growth' },
 ] as const;
@@ -28,16 +27,6 @@ function Icon({ name }: { name: string }) {
           <rect x="3" y="4.5" width="18" height="16" rx="3" />
           <path d="M8 2.5v4M16 2.5v4M3 9.5h18" />
           <path d="M8.8 14.2 11 16.4l4.2-4.4" />
-        </svg>
-      );
-    case 'muscu':
-      return (
-        <svg {...common}>
-          <rect x="1.5" y="9.5" width="2.8" height="5" rx="1" />
-          <rect x="5.2" y="7" width="3.4" height="10" rx="1.2" />
-          <rect x="15.4" y="7" width="3.4" height="10" rx="1.2" />
-          <rect x="19.7" y="9.5" width="2.8" height="5" rx="1" />
-          <path d="M8.6 12h6.8" />
         </svg>
       );
     case 'calendar':

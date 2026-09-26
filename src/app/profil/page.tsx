@@ -7,7 +7,7 @@ import { useData } from '@/components/DataProvider';
 import LevelCard from '@/components/LevelCard';
 import ProgressChart from '@/components/ProgressChart';
 import Curve from '@/components/Curve';
-import { computeRecords, dayXp, formatDate, todayKey, uid } from '@/lib/logic';
+import { dayXp, formatDate, todayKey, uid } from '@/lib/logic';
 import { resizeToDataUrl } from '@/lib/image';
 import { levelFromXp, rewardStates, series, streakOf, totalXpOf } from '@/lib/xp';
 import type { Measurement } from '@/lib/types';
@@ -21,7 +21,7 @@ const METRICS = [
 ] as const;
 
 type MetricId = (typeof METRICS)[number]['id'];
-type View = 'recompenses' | 'mesures' | 'records';
+type View = 'recompenses' | 'mesures';
 
 export default function ProfilePage() {
   const { data, update } = useData();
@@ -49,7 +49,6 @@ export default function ProfilePage() {
   const totalXp = useMemo(() => totalXpOf(data, dayXp), [data]);
   const level = levelFromXp(totalXp);
   const streak = useMemo(() => streakOf(data, tz, dayXp), [data, tz]);
-  const records = useMemo(() => computeRecords(data.workouts), [data.workouts]);
   const rewards = useMemo(() => rewardStates(data, dayXp), [data]);
   const unlockedCount = rewards.filter((r) => r.unlocked).length;
   const nextReward = rewards.find((r) => !r.unlocked) ?? null;
@@ -181,9 +180,6 @@ export default function ProfilePage() {
           <button data-on={view === 'mesures'} onClick={() => setView('mesures')}>
             Mesures
           </button>
-          <button data-on={view === 'records'} onClick={() => setView('records')}>
-            Records
-          </button>
         </div>
       </section>
 
@@ -294,49 +290,6 @@ export default function ProfilePage() {
         </>
       ) : null}
 
-      {view === 'records' ? (
-        <section className="section">
-          {records.length === 0 ? (
-            <div className="card empty">
-              Aucun record pour l&apos;instant. Enregistre une séance pour commencer.
-            </div>
-          ) : (
-            <div className="card">
-              {records.map((r) => {
-                const prev = r.previous;
-                const isTime = r.unit === 'sec' || r.unit === 'min';
-                const timeUnit = r.unit === 'min' ? 'min' : 's';
-                const gain = prev ? r.weight - prev.weight : null;
-                return (
-                  <div key={r.exerciseId} className="rec">
-                    <div style={{ minWidth: 0 }}>
-                      <div className="ex-name">{r.name}</div>
-                      <div className="ex-meta">
-                        {r.dayTitle} · {formatDate(r.date)}
-                      </div>
-                      {prev ? (
-                        <div className="delta">
-                          Précédent :{' '}
-                          {isTime ? `${prev.reps} ${timeUnit}` : `${prev.weight} kg × ${prev.reps}`}
-                        </div>
-                      ) : null}
-                    </div>
-                    <div className="rec-val">
-                      <b className="mono">
-                        {isTime ? `${r.reps} ${timeUnit}` : `${r.weight} kg`}
-                      </b>
-                      {!isTime ? <div className="ex-meta mono">× {r.reps} reps</div> : null}
-                      {gain !== null && gain > 0 ? (
-                        <div className="delta mono">+{Math.round(gain * 10) / 10} kg</div>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      ) : null}
     </>
   );
 }

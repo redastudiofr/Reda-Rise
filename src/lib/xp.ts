@@ -187,7 +187,10 @@ export const BONUS_XP = {
   allObjectives: 20,
   /** The whole Discipline checklist is ticked. */
   perfectChecklist: 25,
-  /** A workout was logged in the Musculation tab. */
+  /**
+   * A workout was logged. The Musculation tab is gone, but workouts logged
+   * before keep their XP so nobody loses a level.
+   */
   workout: 20,
   /** The day was closed with "Terminer ma journée". */
   closedDay: 10,

@@ -2,10 +2,8 @@ import type {
   AppData,
   Bank,
   DayPlan,
-  Equipment,
   Exercise,
   Investments,
-  MuscleGroup,
   Objective,
   Player,
   Reward,
@@ -149,65 +147,6 @@ export const WEEK: DayPlan[] = [
   },
 ];
 
-/** Training days only, in week order starting Monday. */
-export const TRAINING_DAYS = WEEK.filter((d) => !d.rest);
-
-/**
- * Exercises available in the picker but not scheduled by default. Keeps the
- * catalogue rich without imposing them.
- */
-export const EXTRA_EXERCISES: Exercise[] = [
-  { id: 'fentes-bulgares', name: 'Fentes bulgares haltères', sets: 3, repMin: 8, repMax: 10, restSec: 90, rpe: 8, unit: 'kg', defaultWeight: 16, increment: 2, note: 'Par jambe' },
-  { id: 'mollets-debout', name: 'Mollets debout', sets: 4, repMin: 12, repMax: 15, restSec: 60, rpe: 9, unit: 'kg', defaultWeight: 60, increment: 5 },
-  { id: 'tirage-vertical-serre', name: 'Tirage vertical prise serrée', sets: 3, repMin: 10, repMax: 12, restSec: 90, rpe: 8, unit: 'kg', defaultWeight: 45, increment: 2.5 },
-  { id: 'rowing-unilateral', name: 'Rowing unilatéral haltère', sets: 3, repMin: 10, repMax: 12, restSec: 90, rpe: 8, unit: 'kg', defaultWeight: 24, increment: 2, note: 'Par bras' },
-  { id: 'curl-marteau', name: 'Curl marteau', sets: 3, repMin: 10, repMax: 12, restSec: 60, rpe: 8, unit: 'kg', defaultWeight: 12, increment: 2 },
-  { id: 'barre-au-front', name: 'Barre au front', sets: 3, repMin: 10, repMax: 12, restSec: 90, rpe: 8, unit: 'kg', defaultWeight: 20, increment: 2.5 },
-  { id: 'gainage-complet', name: 'Gainage complet', sets: 3, repMin: 45, repMax: 60, restSec: 45, rpe: 8, unit: 'sec', defaultWeight: 0, increment: 0, note: 'Planche, latéral, hollow' },
-  { id: 'cou-isometrique', name: 'Travail cou isométrique', sets: 3, repMin: 20, repMax: 30, restSec: 45, rpe: 6, unit: 'sec', defaultWeight: 0, increment: 0, note: 'Résistance légère, 4 directions' },
-];
-
-/** Every distinct exercise, with the day it belongs to. Walking appears once. */
-export const ALL_EXERCISES = (() => {
-  const seen = new Map<string, Exercise & { dayId: string; dayTitle: string }>();
-  for (const day of [...WEEK.slice(1), WEEK[0]]) {
-    for (const ex of day.exercises) {
-      if (!seen.has(ex.id)) seen.set(ex.id, { ...ex, dayId: day.id, dayTitle: day.title });
-    }
-  }
-  for (const ex of EXTRA_EXERCISES) {
-    if (!seen.has(ex.id)) seen.set(ex.id, { ...ex, dayId: '', dayTitle: 'Catalogue' });
-  }
-  return [...seen.values()];
-})();
-
-export function findExercise(id: string) {
-  return ALL_EXERCISES.find((e) => e.id === id);
-}
-
-/** Default catalogue merged with the user's own exercises. */
-export function catalogue(custom: Exercise[] = []): Exercise[] {
-  const map = new Map<string, Exercise>();
-  for (const e of ALL_EXERCISES) map.set(e.id, e);
-  for (const e of custom) map.set(e.id, e);
-  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-}
-
-export function lookupExercise(id: string, custom: Exercise[] = []): Exercise | undefined {
-  return custom.find((e) => e.id === id) ?? findExercise(id);
-}
-
-/** The ordered exercise ids for a day: the user's layout, else the default. */
-export function planIdsForDay(plan: Record<string, string[]>, dayId: string): string[] {
-  const custom = plan[dayId];
-  if (Array.isArray(custom)) return custom;
-  return (findDay(dayId)?.exercises ?? []).map((e) => e.id);
-}
-
-export function findDay(id: string) {
-  return WEEK.find((d) => d.id === id);
-}
-
 export function dayForWeekday(weekday: number): DayPlan {
   return WEEK[weekday] ?? WEEK[0];
 }
@@ -229,31 +168,21 @@ export const DEFAULT_SETTINGS: Settings = {
     hydration: { enabled: true, start: '08:00', end: '22:00', everyHours: 2 },
     meals: { enabled: true, times: ['08:00', '12:30', '19:30'] },
     sleep: { enabled: true, time: '22:30' },
-    workout: { enabled: true, time: '17:30', days: [1, 2, 4, 5, 6] },
     objectives: { enabled: true, time: '18:00' },
     dayCheck: { enabled: true, times: ['20:00', '22:00'] },
     review: { enabled: true, time: '21:30' },
   },
 };
 
-export function defaultLoads(): Record<string, number> {
-  const loads: Record<string, number> = {};
-  for (const e of ALL_EXERCISES) loads[e.id] = e.defaultWeight;
-  return loads;
-}
-
 export function defaultData(): AppData {
   return {
     version: 5,
     updatedAt: Date.now(),
     settings: DEFAULT_SETTINGS,
-    loads: defaultLoads(),
     daily: {},
     workouts: [],
     measurements: [],
     objectives: [],
-    plan: {},
-    customExercises: [],
     projects: [],
     finances: [],
     savings: { target: 0, entries: [] },
@@ -320,19 +249,15 @@ export function normalizeData(raw: unknown): AppData {
         hydration: { ...base.settings.notifications.hydration, ...(n.hydration ?? {}) },
         meals: { ...base.settings.notifications.meals, ...(n.meals ?? {}) },
         sleep: { ...base.settings.notifications.sleep, ...(n.sleep ?? {}) },
-        workout: { ...base.settings.notifications.workout, ...(n.workout ?? {}) },
         objectives: { ...base.settings.notifications.objectives, ...(n.objectives ?? {}) },
         dayCheck: { ...base.settings.notifications.dayCheck, ...(n.dayCheck ?? {}) },
         review: { ...base.settings.notifications.review, ...(n.review ?? {}) },
       },
     },
-    loads: { ...base.loads, ...(d.loads ?? {}) },
     daily: d.daily ?? {},
     workouts: Array.isArray(d.workouts) ? d.workouts : [],
     measurements: Array.isArray(d.measurements) ? d.measurements : [],
     objectives,
-    plan: (d.plan && typeof d.plan === 'object' ? d.plan : {}) as Record<string, string[]>,
-    customExercises: Array.isArray(d.customExercises) ? d.customExercises : [],
     projects: Array.isArray(d.projects) ? d.projects : [],
     finances: Array.isArray(d.finances) ? d.finances : [],
     savings: {
@@ -358,109 +283,4 @@ export function normalizeData(raw: unknown): AppData {
     },
     rewards,
   };
-}
-
-/* ---------- groupes musculaires et matériel ---------- */
-
-const GROUP_BY_ID: Record<string, MuscleGroup> = {
-  'squat-barre': 'jambes',
-  'presse-cuisses': 'jambes',
-  'fentes-marchees': 'jambes',
-  'leg-curl-allonge': 'jambes',
-  'leg-extension': 'jambes',
-  'souleve-terre-roumain': 'jambes',
-  'squat-gobelet': 'jambes',
-  'presse-pieds-hauts': 'jambes',
-  'hip-thrust': 'jambes',
-  'mollets-assis': 'jambes',
-  'mollets-debout': 'jambes',
-  'fentes-bulgares': 'jambes',
-  tractions: 'dos',
-  'tirage-vertical': 'dos',
-  'tirage-vertical-serre': 'dos',
-  'rowing-barre': 'dos',
-  'rowing-poulie-basse': 'dos',
-  'rowing-unilateral': 'dos',
-  'developpe-couche': 'pectoraux',
-  'developpe-incline-halteres': 'pectoraux',
-  'ecarte-poulie': 'pectoraux',
-  dips: 'pectoraux',
-  'developpe-militaire-halteres': 'epaules',
-  'elevations-laterales': 'epaules',
-  oiseau: 'epaules',
-  'elevations-frontales': 'epaules',
-  'curl-barre': 'bras',
-  'curl-incline': 'bras',
-  'curl-marteau': 'bras',
-  'extensions-triceps-poulie': 'bras',
-  'extension-triceps-tete': 'bras',
-  'barre-au-front': 'bras',
-  'crunch-poulie': 'abdos',
-  'releves-jambes': 'abdos',
-  'gainage-complet': 'abdos',
-  'cou-isometrique': 'autre',
-  marche: 'cardio',
-};
-
-const EQUIPMENT_BY_ID: Record<string, Equipment> = {
-  'squat-barre': 'barre',
-  'rowing-barre': 'barre',
-  'curl-barre': 'barre',
-  'barre-au-front': 'barre',
-  'developpe-couche': 'barre',
-  'souleve-terre-roumain': 'barre',
-  'hip-thrust': 'barre',
-  'developpe-incline-halteres': 'halteres',
-  'developpe-militaire-halteres': 'halteres',
-  'elevations-laterales': 'halteres',
-  oiseau: 'halteres',
-  'elevations-frontales': 'halteres',
-  'curl-incline': 'halteres',
-  'curl-marteau': 'halteres',
-  'extension-triceps-tete': 'halteres',
-  'rowing-unilateral': 'halteres',
-  'squat-gobelet': 'halteres',
-  'fentes-marchees': 'halteres',
-  'fentes-bulgares': 'halteres',
-  'tirage-vertical': 'poulie',
-  'tirage-vertical-serre': 'poulie',
-  'rowing-poulie-basse': 'poulie',
-  'ecarte-poulie': 'poulie',
-  'extensions-triceps-poulie': 'poulie',
-  'crunch-poulie': 'poulie',
-  'presse-cuisses': 'machine',
-  'presse-pieds-hauts': 'machine',
-  'leg-curl-allonge': 'machine',
-  'leg-extension': 'machine',
-  'mollets-assis': 'machine',
-  'mollets-debout': 'machine',
-  tractions: 'poids-du-corps',
-  dips: 'poids-du-corps',
-  'releves-jambes': 'poids-du-corps',
-  'gainage-complet': 'poids-du-corps',
-  'cou-isometrique': 'aucun',
-  marche: 'aucun',
-};
-
-export const MUSCLE_GROUPS: { id: MuscleGroup; label: string }[] = [
-  { id: 'jambes', label: 'Jambes' },
-  { id: 'dos', label: 'Dos' },
-  { id: 'pectoraux', label: 'Pectoraux' },
-  { id: 'epaules', label: 'Épaules' },
-  { id: 'bras', label: 'Bras' },
-  { id: 'abdos', label: 'Abdos' },
-  { id: 'cardio', label: 'Cardio' },
-  { id: 'autre', label: 'Autre' },
-];
-
-export function groupOf(ex: Exercise): MuscleGroup {
-  return ex.group ?? GROUP_BY_ID[ex.id] ?? 'autre';
-}
-
-export function equipmentOf(ex: Exercise): Equipment {
-  return ex.equipment ?? EQUIPMENT_BY_ID[ex.id] ?? 'aucun';
-}
-
-export function groupLabel(id: MuscleGroup): string {
-  return MUSCLE_GROUPS.find((g) => g.id === id)?.label ?? 'Autre';
 }

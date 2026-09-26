@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import { useData } from '@/components/DataProvider';
 import type { Settings } from '@/lib/types';
 
-const DAYS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
-
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -374,52 +372,6 @@ export default function SettingsPage() {
               onChange={(e) => setNotif('sleep', { time: e.target.value })}
             />
           </label>
-        </div>
-
-        <div className="card">
-          <div className="row">
-            <div>
-              <div className="ex-name">Séance</div>
-              <div className="ex-meta">Les jours d&apos;entraînement</div>
-            </div>
-            <Switch
-              on={s.notifications.workout.enabled}
-              onClick={() => setNotif('workout', { enabled: !s.notifications.workout.enabled })}
-            />
-          </div>
-          <label className="field">
-            <span>Heure</span>
-            <input
-              className="input"
-              type="time"
-              value={s.notifications.workout.time}
-              onChange={(e) => setNotif('workout', { time: e.target.value })}
-            />
-          </label>
-          <div className="field">
-            <span>Jours</span>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {DAYS.map((label, i) => {
-                const on = s.notifications.workout.days.includes(i);
-                return (
-                  <button
-                    key={i}
-                    className="pill"
-                    data-on={on}
-                    style={{ flex: 1, textAlign: 'center', padding: '9px 0' }}
-                    onClick={() => {
-                      const days = on
-                        ? s.notifications.workout.days.filter((d) => d !== i)
-                        : [...s.notifications.workout.days, i].sort();
-                      setNotif('workout', { days });
-                    }}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
 
         <div className="card">

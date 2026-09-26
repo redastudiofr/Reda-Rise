@@ -274,10 +274,6 @@ export default function ProgressionPage() {
                 <b className="mono">+{BONUS_XP.perfectChecklist} XP</b>
               </div>
               <div>
-                <span>Séance enregistrée</span>
-                <b className="mono">+{BONUS_XP.workout} XP</b>
-              </div>
-              <div>
                 <span>Journée bouclée</span>
                 <b className="mono">+{BONUS_XP.closedDay} XP</b>
               </div>

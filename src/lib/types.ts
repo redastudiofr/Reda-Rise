@@ -1,17 +1,5 @@
 export type Unit = 'kg' | 'bw' | 'sec' | 'min';
 
-export type MuscleGroup =
-  | 'jambes'
-  | 'dos'
-  | 'pectoraux'
-  | 'epaules'
-  | 'bras'
-  | 'abdos'
-  | 'cardio'
-  | 'autre';
-
-export type Equipment = 'barre' | 'halteres' | 'poulie' | 'machine' | 'poids-du-corps' | 'aucun';
-
 export type Exercise = {
   id: string;
   name: string;
@@ -23,8 +11,6 @@ export type Exercise = {
   unit: Unit;
   defaultWeight: number;
   increment: number;
-  group?: MuscleGroup;
-  equipment?: Equipment;
   note?: string;
 };
 
@@ -314,7 +300,6 @@ export type NotificationSettings = {
   hydration: { enabled: boolean; start: string; end: string; everyHours: number };
   meals: { enabled: boolean; times: string[] };
   sleep: { enabled: boolean; time: string };
-  workout: { enabled: boolean; time: string; days: number[] };
   objectives: { enabled: boolean; time: string };
   /** Evening checks that only fire while some of today's objectives are still open. */
   dayCheck: { enabled: boolean; times: string[] };
@@ -331,16 +316,11 @@ export type AppData = {
   version: number;
   updatedAt: number;
   settings: Settings;
-  loads: Record<string, number>;
   daily: Record<string, DailyEntry>;
   workouts: LoggedWorkout[];
   measurements: Measurement[];
   objectives: Objective[];
   rewards: Reward[];
-  /** dayId -> ordered exercise ids. Absent = the default day is used. */
-  plan: Record<string, string[]>;
-  /** Exercises the user created, merged into the catalogue. */
-  customExercises: Exercise[];
   projects: Project[];
   /** Personal ledger, outside any project. */
   finances: FinanceEntry[];

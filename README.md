@@ -7,27 +7,23 @@ front, routes API et planification des rappels.
 
 ## Ce que fait l'app
 
-Cinq onglets, pensés pour le pouce sur mobile.
+Quatre onglets, pensés pour le pouce sur mobile, plus le profil.
 
-- **Aujourd'hui** — progression des objectifs du jour, niveau et son nom,
-  jours d'affilée, séance du jour, checklist quotidienne de 10 tâches valant
-  130 XP au total.
+- **Aujourd'hui** — objectifs du jour personnalisables (heure, catégorie,
+  validation, filtres), progression de la journée, niveau, jours d'affilée,
+  checklist Discipline de 10 tâches valant 130 XP, bilan du jour, rappels à
+  20 h et 22 h s'il reste des objectifs.
 - **Progression** (`/progression`) — niveau, nom et palier (Bronze, Argent,
   Or, Platine, Diamant, Mythique), XP vers le niveau suivant, statistiques,
   XP gagnée jour par jour, courbe de progression et barème de l'XP. L'XP
   vient des objectifs, des tâches Discipline, des finances et de bonus
-  (journée complète, séance enregistrée, journée bouclée, paliers de série).
-  Elle est recalculée depuis les données enregistrées : rien ne peut dériver.
-- **Semaine** — le planning hebdomadaire fixe. Lundi jambes, mardi dos et
-  biceps, mercredi repos actif, jeudi pectoraux et triceps, vendredi épaules et
-  abdos, samedi jambes, dimanche repos. De la marche à chaque jour. Saisie série
-  par série, suggestion automatique de la charge suivante quand le haut de la
-  fourchette de reps est atteint sur toutes les séries, historique.
-- **Objectifs** — objectifs personnels, avec ou sans cible chiffrée et barre de
-  progression.
-- **Progrès** — mensurations (poids, bras, poitrine, taille, cuisse) avec courbe
-  dans le temps, et records par exercice (1RM estimé, formule d'Epley) avec
-  l'écart au record précédent.
+  (journée complète, journée bouclée, paliers de série). Elle est recalculée
+  depuis les données enregistrées : rien ne peut dériver.
+- **Calendrier** — le mois, avec l'XP, les objectifs et le planning de chaque
+  jour.
+- **Business** — projets, finances personnelles, épargne, investissements,
+  comptes bancaires, abonnements.
+- **Profil** — identité, récompenses et classement, mensurations.
 - **Réglages** — profil, fuseau horaire, heures de tous les rappels, activation
   des notifications push sur l'appareil, notification de test.
 
@@ -170,7 +166,8 @@ de 75 minutes absorbe l'imprécision du planificateur : un rappel prévu à 9 h 
 part encore s'il est déclenché à 9 h 40, mais jamais deux fois.
 
 Rappels gérés : créatine (heure fixe), hydratation (toutes les N heures entre
-deux bornes), 3 repas, sommeil, séance (aux jours d'entraînement choisis).
+deux bornes), 3 repas, sommeil, objectifs, rappels du soir (20 h et 22 h s'il
+reste des objectifs), bilan du jour.
 Toutes les heures se règlent dans l'écran Réglages.
 
 ## Installer sur l'écran d'accueil
@@ -198,11 +195,12 @@ l'installation donne l'icône et le mode plein écran.
 ```
 src/
   app/
-    page.tsx               Aujourd'hui (objectifs, checklist, XP, niveau, séance du jour)
+    page.tsx               Aujourd'hui (objectifs, checklist, XP, niveau, bilan)
     progression/           Niveau, statistiques, courbe et paliers
-    semaine/               Planning hebdomadaire, saisie et historique
-    objectifs/             Objectifs personnels
-    progres/               Mensurations, courbes et records
+    quetes/                Toutes les quêtes et objectifs
+    calendrier/            Vue mensuelle
+    entrepreneuriat/       Projets et finances (banque, investir)
+    profil/                Profil, mensurations ; recompenses/ et classement
     reglages/              Profil, rappels, activation push
     login/                 Écran de connexion
     api/
@@ -212,9 +210,11 @@ src/
       push/subscribe       Enregistrement et suppression d'abonnement
       push/test            Notification de test
       cron/notify          Envoi des rappels dus
+      bank, market         Connecteurs optionnels (agrégateur bancaire, cotations)
+      leaderboard          Classement partagé
   lib/
-    program.ts             Le planning de la semaine et ses exercices
-    logic.ts               Checklist, records, suggestions de charge
+    program.ts             Données par défaut, migration, planning de la semaine
+    logic.ts               Dates, checklist Discipline
     xp.ts                  XP par jour, bonus, niveaux et noms, séries, statistiques
     schedule.ts            Calcul des rappels dus
     push.ts                Envoi web-push (VAPID)
@@ -234,8 +234,6 @@ public/
   réseau : c'est le `localStorage` du client qui assure le mode hors-ligne.
 - Les données sont stockées comme un seul document JSON (`app_state`), ce qui
   suffit largement pour un utilisateur unique et simplifie la synchronisation.
-- Les records sont recalculés à partir de l'historique des séances, il n'y a
-  donc rien à corriger à la main si une séance est modifiée.
 
 ## Ce qui demande une configuration externe
 

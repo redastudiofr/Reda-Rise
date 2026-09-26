@@ -2,6 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ['pg', 'web-push'],
+  // The Musculation section was removed: old bookmarks and installed apps land on the home page.
+  async redirects() {
+    return [{ source: '/muscu/:path*', destination: '/', permanent: false }];
+  },
   async headers() {
     return [
       {

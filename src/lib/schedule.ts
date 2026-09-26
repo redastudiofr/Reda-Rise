@@ -53,7 +53,7 @@ function isDue(nowMinutes: number, target: number): boolean {
 }
 
 export function dueNotifications(settings: Settings, now = new Date()): DueNotification[] {
-  const { dateKey, minutes, weekday } = localNow(settings.timezone, now);
+  const { dateKey, minutes } = localNow(settings.timezone, now);
   const n = settings.notifications;
   const out: DueNotification[] = [];
 
@@ -119,19 +119,6 @@ export function dueNotifications(settings: Settings, now = new Date()): DueNotif
         body: 'Prépare-toi à dormir. Écrans coupés, 8 h de récupération.',
         tag: 'sleep',
         url: '/',
-      });
-    }
-  }
-
-  if (n.workout.enabled && n.workout.days.includes(weekday)) {
-    const t = parseTime(n.workout.time);
-    if (t !== null && isDue(minutes, t)) {
-      out.push({
-        key: `workout:${dateKey}`,
-        title: 'Séance',
-        body: 'Ta séance commence bientôt. Ouvre l’app pour voir les charges prévues.',
-        tag: 'workout',
-        url: '/muscu',
       });
     }
   }
