@@ -56,6 +56,8 @@ export function defaultData(): AppData {
     savings: { target: 0, entries: [] },
     investments: { entries: [], holdings: [] },
     financialGoals: [],
+    accounts: [],
+    savingsGoals: [],
     subscriptions: [],
     bank: { connections: [], accounts: [], transactions: [] },
     agenda: { events: [], tasks: [], projects: [] },
@@ -139,6 +141,8 @@ export function normalizeData(raw: unknown): AppData {
       holdings: Array.isArray(d.investments?.holdings) ? d.investments.holdings : [],
     },
     financialGoals: Array.isArray(d.financialGoals) ? d.financialGoals : [],
+    accounts: Array.isArray(d.accounts) ? d.accounts : [],
+    savingsGoals: Array.isArray(d.savingsGoals) ? d.savingsGoals : [],
     subscriptions: Array.isArray(d.subscriptions) ? d.subscriptions : [],
     bank: {
       connections: Array.isArray(d.bank?.connections) ? d.bank.connections : [],

@@ -7,7 +7,7 @@ front, routes API et planification des rappels.
 
 ## Ce que fait l'app
 
-Quatre onglets, pensés pour le pouce sur mobile, plus le profil.
+Cinq onglets, pensés pour le pouce sur mobile, dont le profil.
 
 - **Aujourd'hui** — objectifs du jour personnalisables (heure, catégorie,
   validation, filtres), progression de la journée, niveau, jours d'affilée,
@@ -26,6 +26,14 @@ Quatre onglets, pensés pour le pouce sur mobile, plus le profil.
   priorité, statut, catégorie et projet ; projets avec leur progression ; les
   objectifs du jour placés à leur heure. Création en touchant un créneau,
   glisser-déposer (appui long sur mobile), durée étirable, recherche, filtres.
+- **Finances** (`/finances`) — finances personnelles, séparées du Business.
+  Comptes tenus à la main (compte bancaire, épargne, espèces, autre) et
+  patrimoine disponible ; revenus et dépenses par catégorie, évolution sur 6
+  ou 12 mois ; abonnements avec prix, fréquence, date de prélèvement,
+  catégorie, compte, totaux mensuel et annuel, et une analyse neutre
+  (utilisation, prix, importance, alternative) qui suggère sans jamais
+  décider ; objectifs d'épargne avec progression et pistes générales (pas un
+  conseil financier personnalisé). Aucune connexion bancaire ici.
 - **Business** — projets, finances personnelles, épargne, investissements,
   comptes bancaires, abonnements.
 - **Profil** — identité, récompenses et classement, mensurations.
@@ -205,6 +213,7 @@ src/
     progression/           Niveau, statistiques, courbe et paliers
     quetes/                Toutes les quêtes et objectifs
     calendrier/            Agenda : vues, tâches, projets
+    finances/              Comptes, dépenses, abonnements, épargne
     entrepreneuriat/       Projets et finances (banque, investir)
     profil/                Profil, mensurations ; recompenses/ et classement
     reglages/              Profil, rappels, activation push
@@ -223,6 +232,7 @@ src/
     logic.ts               Dates, checklist Discipline
     xp.ts                  XP par jour, bonus, niveaux et noms, séries, statistiques
     agenda.ts              Répétitions, fusion du jour, rappels, recherche, projets
+    finance.ts             Comptes, soldes, abonnements, analyse, épargne
     schedule.ts            Calcul des rappels dus
     push.ts                Envoi web-push (VAPID)
     db.ts                  Postgres, avec repli en mémoire

@@ -1,6 +1,6 @@
 import type { AppData, Category, DailyEntry, Difficulty, Objective, Reward } from './types';
 import { TASKS, dayXp, shiftKey, todayKey, weekdayOf } from './logic';
-import { financeActivityDates, financeXpOnDate } from './business';
+import { financeActivityDates, financeXpOnDate, suggestGoalXp } from './business';
 
 /* ---------- niveaux ---------- */
 
@@ -243,7 +243,12 @@ function ledgerOf(data: AppData, taskXp: TaskXp): Ledger {
 
   const workoutDates = new Set(data.workouts.map((w) => w.date));
   const dates = [
-    ...new Set([...Object.keys(data.daily), ...financeActivityDates(data), ...workoutDates]),
+    ...new Set([
+      ...Object.keys(data.daily),
+      ...financeActivityDates(data),
+      ...workoutDates,
+      ...data.savingsGoals.flatMap((g) => (g.achievedAt ? [g.achievedAt] : [])),
+    ]),
   ].sort();
   const byId = new Map(data.objectives.map((o) => [o.id, o]));
   const maxChecklist = taskXp({ tasks: Object.fromEntries(TASKS.map((t) => [t.id, true])) });
@@ -269,6 +274,11 @@ function ledgerOf(data: AppData, taskXp: TaskXp): Ledger {
     }
     const finance = financeXpOnDate(data, date);
     if (finance > 0) items.push({ source: 'finance', label: 'Épargne et investissement', xp: finance });
+    for (const g of data.savingsGoals) {
+      if (g.achievedAt === date) {
+        items.push({ source: 'finance', label: `Objectif d’épargne atteint : ${g.label}`, xp: suggestGoalXp(g.target) });
+      }
+    }
 
     const planned = objectivesForDate(data.objectives, date);
     if (planned.length > 0 && planned.every((o) => done.includes(o.id))) {

@@ -179,6 +179,8 @@ export type FinanceEntry = {
   category: string;
   label?: string;
   amount: number;
+  /** Personal finances only: the account it moved money on (its balance follows). */
+  accountId?: string;
 };
 
 export type Project = {
@@ -313,15 +315,66 @@ export type Player = {
 };
 
 /** A recurring monthly charge — Netflix, salle de sport, forfait téléphone… */
+export type SubFrequency = 'hebdomadaire' | 'mensuel' | 'trimestriel' | 'annuel';
+
+/** How often the user actually uses a subscription — one input of its analysis. */
+export type SubUsage = 'quotidienne' | 'hebdomadaire' | 'mensuelle' | 'rare' | 'jamais';
+
+export type SubImportance = 'essentiel' | 'utile' | 'accessoire';
+
 export type Subscription = {
   id: string;
   name: string;
-  /** Charged every month. */
+  /**
+   * Monthly equivalent, always. Kept so every screen can add subscriptions up
+   * without knowing about frequencies; `price` + `frequency` are the source.
+   */
   amount: number;
+  /** Price charged each period. Absent on older entries: then `amount` monthly. */
+  price?: number;
+  frequency?: SubFrequency;
   category?: string;
   /** Day of the month the payment is taken, 1–31. */
   dayOfMonth?: number;
+  /** A charge date, YYYY-MM-DD, from which the next ones follow the frequency. */
+  billingDate?: string;
+  accountId?: string;
+  usage?: SubUsage;
+  importance?: SubImportance;
+  /** A cheaper or free alternative the user knows of. */
+  alternative?: string;
+  /** The user's own call — the app only ever suggests. */
+  decision?: 'conserver' | 'resilier';
   createdAt: string;
+};
+
+/* ---------- comptes et objectifs d'épargne (finances personnelles) ---------- */
+
+export type AccountType = 'courant' | 'epargne' | 'especes' | 'autre';
+
+/** A balance kept by hand — no bank connection involved. */
+export type MoneyAccount = {
+  id: string;
+  name: string;
+  type: AccountType;
+  bank?: string;
+  balance: number;
+  createdAt: string;
+  updatedAt: string;
+  archived?: boolean;
+};
+
+export type SavingsGoal = {
+  id: string;
+  label: string;
+  target: number;
+  /** What is already set aside for it. */
+  current: number;
+  deadline?: string;
+  color: string;
+  createdAt: string;
+  /** Set once, the first day `current` reached `target`. */
+  achievedAt?: string;
 };
 
 export type FinancialGoal = {
@@ -366,6 +419,10 @@ export type AppData = {
   savings: Savings;
   investments: Investments;
   financialGoals: FinancialGoal[];
+  /** Personal accounts with hand-kept balances. */
+  accounts: MoneyAccount[];
+  /** Personal savings goals, each with its own progress. */
+  savingsGoals: SavingsGoal[];
   /** Recurring monthly charges, kept apart from the one-off ledger. */
   subscriptions: Subscription[];
   /** Bank links, accounts and transactions pulled from an aggregator. */
