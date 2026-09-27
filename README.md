@@ -1,4 +1,4 @@
-# Telos RS
+# TELOS
 
 Application Next.js (App Router) installable sur iPhone et Android, avec cache
 hors-ligne complet et notifications push réelles (VAPID) qui s'affichent même

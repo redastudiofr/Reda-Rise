@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Telos RS",
-  "short_name": "Telos RS",
-  "description": "Entraînement, discipline quotidienne et objectifs personnels.",
+  "name": "TELOS",
+  "short_name": "TELOS",
+  "description": "Objectifs du jour, calendrier, finances, business et réseau d’entrepreneurs.",
   "lang": "fr",
   "dir": "ltr",
   "start_url": "/",
@@ -11,7 +11,11 @@
   "orientation": "portrait",
   "background_color": "#060709",
   "theme_color": "#060709",
-  "categories": ["health", "fitness", "lifestyle"],
+  "categories": [
+    "productivity",
+    "business",
+    "finance"
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -33,7 +37,21 @@
     }
   ],
   "shortcuts": [
-    { "name": "Semaine", "url": "/semaine" },
-    { "name": "Objectifs", "url": "/objectifs" }
+    {
+      "name": "Calendrier",
+      "url": "/calendrier"
+    },
+    {
+      "name": "Finances",
+      "url": "/finances"
+    },
+    {
+      "name": "Business",
+      "url": "/entrepreneuriat"
+    },
+    {
+      "name": "Network",
+      "url": "/network"
+    }
   ]
 }

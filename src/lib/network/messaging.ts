@@ -50,7 +50,7 @@ export async function notifyNewMessage(convId: string, conv: ConvDoc, fromId: st
     if (!(await hit(`push:${to}:${convId}`, 1, 60))) continue;
     const subs = await listDocs<PushSub>('push', { part: to, limit: 20 });
     for (const s of subs) {
-      await sendTo(s.data, { title: 'Telos RS · Network', body, tag: convId, url: `/network/messages/${convId}` }, async () => {
+      await sendTo(s.data, { title: 'TELOS · Network', body, tag: convId, url: `/network/messages/${convId}` }, async () => {
         await deleteDoc('push', s.id);
       });
     }

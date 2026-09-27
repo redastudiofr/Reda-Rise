@@ -1,8 +1,8 @@
 /* Service worker: offline cache + web push. */
 
-const VERSION = 'v3';
-const STATIC_CACHE = `reda-static-${VERSION}`;
-const PAGE_CACHE = `reda-pages-${VERSION}`;
+const VERSION = 'v4';
+const STATIC_CACHE = `telos-static-${VERSION}`;
+const PAGE_CACHE = `telos-pages-${VERSION}`;
 
 // Only assets that never redirect are precached; pages are cached as they are
 // visited, so the login redirect never ends up stored as the app shell.
@@ -99,21 +99,21 @@ self.addEventListener('fetch', (event) => {
 /* ---------- push ---------- */
 
 self.addEventListener('push', (event) => {
-  let payload = { title: 'Telos RS', body: '' };
+  let payload = { title: 'TELOS', body: '' };
   if (event.data) {
     try {
       payload = event.data.json();
     } catch (_) {
-      payload = { title: 'Telos RS', body: event.data.text() };
+      payload = { title: 'TELOS', body: event.data.text() };
     }
   }
 
   event.waitUntil(
-    self.registration.showNotification(payload.title || 'Telos RS', {
+    self.registration.showNotification(payload.title || 'TELOS', {
       body: payload.body || '',
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
-      tag: payload.tag || 'reda',
+      tag: payload.tag || 'telos',
       renotify: true,
       data: { url: payload.url || '/' },
     }),
