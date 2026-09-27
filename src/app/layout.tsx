@@ -3,11 +3,11 @@ import './globals.css';
 import AppShell from '@/components/AppShell';
 
 export const metadata: Metadata = {
-  title: 'TELOS',
-  applicationName: 'TELOS',
+  title: 'Telos',
+  applicationName: 'Telos',
   description: 'Objectifs du jour, calendrier, finances, business et réseau d’entrepreneurs.',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'TELOS' },
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Telos' },
   icons: {
     icon: [
       { url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' },

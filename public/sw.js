@@ -1,6 +1,6 @@
 /* Service worker: offline cache + web push. */
 
-const VERSION = 'v4';
+const VERSION = 'v5';
 const STATIC_CACHE = `telos-static-${VERSION}`;
 const PAGE_CACHE = `telos-pages-${VERSION}`;
 
@@ -13,6 +13,7 @@ const PRECACHE = [
   '/icons/icon-512.png',
   '/icons/maskable-512.png',
   '/icons/apple-touch-icon.png',
+  '/icons/telos-wordmark.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -99,17 +100,17 @@ self.addEventListener('fetch', (event) => {
 /* ---------- push ---------- */
 
 self.addEventListener('push', (event) => {
-  let payload = { title: 'TELOS', body: '' };
+  let payload = { title: 'Telos', body: '' };
   if (event.data) {
     try {
       payload = event.data.json();
     } catch (_) {
-      payload = { title: 'TELOS', body: event.data.text() };
+      payload = { title: 'Telos', body: event.data.text() };
     }
   }
 
   event.waitUntil(
-    self.registration.showNotification(payload.title || 'TELOS', {
+    self.registration.showNotification(payload.title || 'Telos', {
       body: payload.body || '',
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',

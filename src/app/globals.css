@@ -928,7 +928,7 @@ a {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: conic-gradient(from 0deg, transparent 0deg, var(--accent) 110deg, transparent 210deg);
+  background: conic-gradient(from 0deg, transparent 0deg, #ffffff 110deg, transparent 210deg);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
   animation: boot-spin 1.15s linear infinite;
@@ -953,10 +953,20 @@ a {
 }
 
 .boot-name {
-  font-size: 12px;
-  letter-spacing: 0.32em;
-  color: var(--muted-2);
-  font-weight: 600;
+  width: 92px;
+  height: auto;
+  opacity: 0.85;
+}
+
+.login-title {
+  margin: 0 0 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.login-title img {
+  width: 150px;
+  height: auto;
 }
 
 .boot-bar {
@@ -972,7 +982,7 @@ a {
   height: 100%;
   width: 38%;
   border-radius: 99px;
-  background: var(--accent);
+  background: #ffffff;
   animation: boot-sweep 1.3s ease-in-out infinite;
 }
 
