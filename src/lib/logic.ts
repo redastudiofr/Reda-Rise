@@ -1,4 +1,4 @@
-import type { AppData, DailyEntry } from './types';
+import type { AppData, DailyEntry, DisciplineTask } from './types';
 
 /* ---------- dates ---------- */
 
@@ -56,7 +56,11 @@ export function weekDates(tz: string): string[] {
 
 export type Task = { id: string; label: string; hint: string; xp: number };
 
-export const TASKS: Task[] = [
+/**
+ * The fixed checklist used before it became customisable. Kept so that days
+ * recorded back then keep exactly the XP they earned.
+ */
+export const LEGACY_TASKS: Task[] = [
   { id: 'seance', label: 'Séance effectuée', hint: 'Entraînement du jour terminé', xp: 30 },
   { id: 'creatine', label: 'Créatine', hint: '3 à 5 g, tous les jours', xp: 10 },
   { id: 'repas', label: '3 repas complets', hint: 'Matin, midi, soir', xp: 15 },
@@ -69,11 +73,59 @@ export const TASKS: Task[] = [
   { id: 'journal', label: 'Journal rempli', hint: 'Séance et ressenti notés', xp: 5 },
 ];
 
-export const MAX_DAY_XP = TASKS.reduce((a, t) => a + t.xp, 0);
+export const DISCIPLINE_LIMITS = { min: 1, max: 15, xpMin: 1, xpMax: 20, label: 60, hint: 80 } as const;
 
+/** Starting list: the former checklist, XP capped to the 1–20 range. The user edits it freely. */
+export const DEFAULT_DISCIPLINE: DisciplineTask[] = LEGACY_TASKS.map((t) => ({
+  id: t.id,
+  label: t.label,
+  hint: t.hint,
+  xp: Math.min(t.xp, DISCIPLINE_LIMITS.xpMax),
+}));
+
+export function clampTaskXp(v: unknown): number {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n)) return 10;
+  return Math.min(DISCIPLINE_LIMITS.xpMax, Math.max(DISCIPLINE_LIMITS.xpMin, n));
+}
+
+/** A valid checklist: 1 to 15 named items, unique ids, XP between 1 and 20. */
+export function normalizeDiscipline(list: unknown): DisciplineTask[] {
+  if (!Array.isArray(list)) return DEFAULT_DISCIPLINE.map((t) => ({ ...t }));
+  const seen = new Set<string>();
+  const out: DisciplineTask[] = [];
+  for (const raw of list as Partial<DisciplineTask>[]) {
+    const label = typeof raw?.label === 'string' ? raw.label.trim().slice(0, DISCIPLINE_LIMITS.label) : '';
+    const id = typeof raw?.id === 'string' && raw.id ? raw.id : '';
+    if (!label || !id || seen.has(id)) continue;
+    seen.add(id);
+    const hint = typeof raw.hint === 'string' ? raw.hint.trim().slice(0, DISCIPLINE_LIMITS.hint) : '';
+    out.push({ id, label, ...(hint ? { hint } : {}), xp: clampTaskXp(raw.xp) });
+    if (out.length >= DISCIPLINE_LIMITS.max) break;
+  }
+  return out.length >= DISCIPLINE_LIMITS.min ? out : DEFAULT_DISCIPLINE.map((t) => ({ ...t }));
+}
+
+/** The checklist that applied on a day: its own saved copy, or the former fixed list. */
+export function entryChecklist(entry?: DailyEntry): { id: string; label: string; xp: number }[] {
+  return entry?.checklist ?? LEGACY_TASKS;
+}
+
+export function checklistMax(list: { xp: number }[]): number {
+  return list.reduce((a, t) => a + t.xp, 0);
+}
+
+/** XP from the Discipline checklist on a day. */
 export function dayXp(entry?: DailyEntry): number {
   if (!entry) return 0;
-  return TASKS.reduce((a, t) => a + (entry.tasks?.[t.id] ? t.xp : 0), 0);
+  return entryChecklist(entry).reduce((a, t) => a + (entry.tasks?.[t.id] ? t.xp : 0), 0);
+}
+
+/** Every item of that day's checklist is ticked. */
+export function checklistComplete(entry?: DailyEntry): boolean {
+  if (!entry) return false;
+  const list = entryChecklist(entry);
+  return list.length > 0 && list.every((t) => entry.tasks?.[t.id]);
 }
 
 

@@ -11,7 +11,8 @@ Six onglets, pensés pour le pouce sur mobile, dont le profil.
 
 - **Aujourd'hui** — objectifs du jour personnalisables (heure, catégorie,
   validation, filtres), progression de la journée, niveau, jours d'affilée,
-  checklist Discipline de 10 tâches valant 130 XP, bilan du jour, rappels à
+  checklist Discipline personnalisable (1 à 15 objectifs, 1 à 20 XP chacun ;
+  modifier la liste ne change jamais l'XP des jours passés), bilan du jour, rappels à
   20 h et 22 h s'il reste des objectifs.
 - **Progression** (`/progression`) — niveau, nom et palier (Bronze, Argent,
   Or, Platine, Diamant, Mythique), XP vers le niveau suivant, statistiques,

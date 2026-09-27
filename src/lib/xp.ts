@@ -1,5 +1,5 @@
 import type { AppData, Category, DailyEntry, Difficulty, Objective, Reward } from './types';
-import { TASKS, dayXp, shiftKey, todayKey, weekdayOf } from './logic';
+import { checklistComplete, dayXp, entryChecklist, shiftKey, todayKey, weekdayOf } from './logic';
 import { financeActivityDates, financeXpOnDate, suggestGoalXp } from './business';
 
 /* ---------- niveaux ---------- */
@@ -251,7 +251,6 @@ function ledgerOf(data: AppData, taskXp: TaskXp): Ledger {
     ]),
   ].sort();
   const byId = new Map(data.objectives.map((o) => [o.id, o]));
-  const maxChecklist = taskXp({ tasks: Object.fromEntries(TASKS.map((t) => [t.id, true])) });
 
   const days = new Map<string, DayXp>();
   let previous: string | null = null;
@@ -266,10 +265,9 @@ function ledgerOf(data: AppData, taskXp: TaskXp): Ledger {
       if (o && o.xp > 0) items.push({ source: 'objectif', label: o.title, xp: o.xp });
     }
     if (entry) {
-      for (const t of TASKS) {
-        if (!entry.tasks?.[t.id]) continue;
-        const one = taskXp({ tasks: { [t.id]: true } });
-        if (one > 0) items.push({ source: 'tache', label: t.label, xp: one });
+      // Each day is counted with the checklist it had, so editing the list never rewrites the past.
+      for (const t of entryChecklist(entry)) {
+        if (entry.tasks?.[t.id] && t.xp > 0) items.push({ source: 'tache', label: t.label, xp: t.xp });
       }
     }
     const finance = financeXpOnDate(data, date);
@@ -284,7 +282,7 @@ function ledgerOf(data: AppData, taskXp: TaskXp): Ledger {
     if (planned.length > 0 && planned.every((o) => done.includes(o.id))) {
       items.push({ source: 'bonus', label: 'Tous les objectifs du jour', xp: BONUS_XP.allObjectives });
     }
-    if (entry && maxChecklist > 0 && taskXp(entry) >= maxChecklist) {
+    if (checklistComplete(entry)) {
       items.push({ source: 'bonus', label: 'Discipline au complet', xp: BONUS_XP.perfectChecklist });
     }
     if (workoutDates.has(date)) {

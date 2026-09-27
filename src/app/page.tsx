@@ -9,9 +9,9 @@ import ObjectiveSheet, { type ObjectiveDraft } from '@/components/ObjectiveSheet
 import ConfirmDialog from '@/components/ConfirmDialog';
 import PhotoProof from '@/components/PhotoProof';
 import RandomGoalSheet, { type GeneratedGoal } from '@/components/RandomGoalSheet';
+import DisciplineSheet from '@/components/DisciplineSheet';
 import {
-  MAX_DAY_XP,
-  TASKS,
+  checklistMax,
   dayXp,
   shiftKey,
   todayKey,
@@ -29,7 +29,7 @@ import {
 import { deleteQuest } from '@/lib/quests';
 import { localNow } from '@/lib/schedule';
 import { enablePush, readPushState, type PushState } from '@/lib/pushClient';
-import { proofKey, type DailyEntry, type Objective, type ObjectiveProof } from '@/lib/types';
+import { proofKey, type DailyEntry, type DisciplineTask, type Objective, type ObjectiveProof } from '@/lib/types';
 
 type Filter = 'tous' | 'afaire' | 'faits';
 
@@ -117,6 +117,7 @@ export default function TodayPage() {
   const [drawing, setDrawing] = useState(false);
   /** Objective waiting for its photo before it counts as done. */
   const [provingId, setProvingId] = useState<string | null>(null);
+  const [editingDiscipline, setEditingDiscipline] = useState(false);
   const [filter, setFilter] = useState<Filter>('tous');
   /** Objective just validated: plays its animation and stays in a filtered list a moment. */
   const [recent, setRecent] = useState<{ id: string; done: boolean } | null>(null);
@@ -285,8 +286,24 @@ export default function TodayPage() {
     update((d) => {
       const e: DailyEntry = d.daily[key] ?? { tasks: {} };
       const tasks: Record<string, boolean> = { ...e.tasks, [taskId]: !e.tasks[taskId] };
-      return { ...d, daily: { ...d.daily, [key]: { ...e, tasks } } };
+      // The day keeps a copy of the checklist it was ticked against.
+      return { ...d, daily: { ...d.daily, [key]: { ...e, tasks, checklist: d.settings.discipline } } };
     });
+  }
+
+  /** New checklist: applies from today on. Past days keep the list they had. */
+  function saveDiscipline(list: DisciplineTask[]) {
+    update((d) => {
+      const e = d.daily[key];
+      const daily = { ...d.daily };
+      if (e) {
+        const ids = new Set(list.map((t) => t.id));
+        const tasks = Object.fromEntries(Object.entries(e.tasks ?? {}).filter(([id]) => ids.has(id)));
+        daily[key] = { ...e, tasks, checklist: list };
+      }
+      return { ...d, settings: { ...d.settings, discipline: list }, daily };
+    });
+    setEditingDiscipline(false);
   }
 
   function closeDay() {
@@ -343,7 +360,9 @@ export default function TodayPage() {
   const proving = provingId ? (todays.find((o) => o.id === provingId) ?? null) : null;
 
   const checklistXp = dayXp(entry);
-  const dayRatio = Math.round((stats.today / (MAX_DAY_XP + todays.reduce((a, o) => a + o.xp, 0) || 1)) * 100);
+  const discipline = data.settings.discipline;
+  const disciplineMax = checklistMax(discipline);
+  const dayRatio = Math.round((stats.today / (disciplineMax + todays.reduce((a, o) => a + o.xp, 0) || 1)) * 100);
   const unfinished = todays.filter((o) => !isDone(entry, o.id));
   const next = unfinished.find((o) => o.time) ?? unfinished[0];
   const reminderTimes = dayCheck.times.join(' et ');
@@ -365,6 +384,9 @@ export default function TodayPage() {
     <div className="dash">
       {burst ? (
         <XpBurst key={burst.id} amount={burst.amount} title={burst.title} label="Journée complète" />
+      ) : null}
+      {editingDiscipline ? (
+        <DisciplineSheet initial={data.settings.discipline} onSave={saveDiscipline} onClose={() => setEditingDiscipline(false)} />
       ) : null}
       {creating || editing ? (
         <ObjectiveSheet
@@ -635,17 +657,22 @@ export default function TodayPage() {
 
         <aside className="dash-side">
           <section className="section">
-            <h2 className="section-title">
-              Discipline · {checklistXp} / {MAX_DAY_XP} XP
-            </h2>
-            {TASKS.map((task) => {
+            <div className="row dash-head">
+              <h2 className="section-title" style={{ margin: 0 }}>
+                Discipline · {checklistXp} / {disciplineMax} XP
+              </h2>
+              <button className="link-sm" onClick={() => setEditingDiscipline(true)}>
+                Modifier
+              </button>
+            </div>
+            {discipline.map((task) => {
               const on = Boolean(entry?.tasks?.[task.id]);
               return (
                 <button key={task.id} className="check" data-on={on} onClick={() => toggleTask(task.id)}>
                   <span className="box">{on ? <Check /> : null}</span>
                   <span className="check-main">
                     <span className="check-label">{task.label}</span>
-                    <span className="check-hint">{task.hint}</span>
+                    {task.hint ? <span className="check-hint">{task.hint}</span> : null}
                   </span>
                   <span className="xp-chip">+{task.xp}</span>
                 </button>

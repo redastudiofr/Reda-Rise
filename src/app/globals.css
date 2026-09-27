@@ -6532,3 +6532,108 @@ a {
   flex-wrap: wrap;
   gap: 6px;
 }
+
+/* ---------- discipline : liste personnalisée ---------- */
+
+.disc-sheet {
+  max-height: 92dvh;
+  overflow-y: auto;
+}
+
+.disc-list {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.disc-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.disc-fields {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.disc-fields .input {
+  background: var(--surface);
+  padding: 9px 11px;
+}
+
+.disc-hint {
+  font-size: 13px !important;
+}
+
+.disc-side {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+}
+
+.disc-xp {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.disc-xp button,
+.disc-tools button {
+  width: 30px;
+  height: 34px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+}
+
+.disc-xp button:disabled,
+.disc-tools button:disabled {
+  opacity: 0.3;
+}
+
+.disc-xp input {
+  width: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: center;
+  font-size: 15px;
+  outline: none;
+}
+
+.disc-tools {
+  display: flex;
+}
+
+.disc-tools button {
+  height: 28px;
+  color: var(--muted);
+}
+
+.disc-del {
+  color: #e0806f !important;
+}
+
+.disc-total {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+}
+
+.dash-side .dash-head button.link-sm {
+  background: none;
+  border: 0;
+  padding: 4px 0;
+}

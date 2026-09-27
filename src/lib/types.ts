@@ -133,9 +133,24 @@ export function proofKey(date: string, objectiveId: string): string {
   return `${date}|${objectiveId}`;
 }
 
+/** One item of the Discipline checklist, chosen by the user. */
+export type DisciplineTask = {
+  id: string;
+  label: string;
+  hint?: string;
+  /** 1 to 20. */
+  xp: number;
+};
+
 /** A day: checklist ticks, objectives completed, and whether it was closed. */
 export type DailyEntry = {
   tasks: Record<string, boolean>;
+  /**
+   * The checklist as it was that day (items and XP), saved when a box is
+   * ticked. Editing the list later never changes the XP of past days.
+   * Absent on days from before the list was customisable.
+   */
+  checklist?: DisciplineTask[];
   objectives?: string[];
   note?: string;
   closed?: boolean;
@@ -431,6 +446,8 @@ export type Settings = {
   profile: Profile;
   timezone: string;
   notifications: NotificationSettings;
+  /** The user's own Discipline checklist: 1 to 15 items. */
+  discipline: DisciplineTask[];
 };
 
 export type AppData = {

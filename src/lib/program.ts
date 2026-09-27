@@ -9,6 +9,7 @@ import type {
   Savings,
   Settings,
 } from './types';
+import { DEFAULT_DISCIPLINE, normalizeDiscipline } from './logic';
 
 /** Milestone rewards everyone starts with. The user can add their own. */
 export const DEFAULT_REWARDS: Reward[] = [
@@ -31,6 +32,7 @@ export const DEFAULT_SETTINGS: Settings = {
     goal: 'Physique musclé, sec et proportionné — progression saine sur le long terme',
   },
   timezone: 'Europe/Paris',
+  discipline: DEFAULT_DISCIPLINE,
   notifications: {
     creatine: { enabled: true, time: '09:00' },
     hydration: { enabled: true, start: '08:00', end: '22:00', everyHours: 2 },
@@ -117,6 +119,7 @@ export function normalizeData(raw: unknown): AppData {
     settings: {
       profile: { ...base.settings.profile, ...(s.profile ?? {}) },
       timezone: s.timezone || base.settings.timezone,
+      discipline: normalizeDiscipline(s.discipline),
       notifications: {
         creatine: { ...base.settings.notifications.creatine, ...(n.creatine ?? {}) },
         hydration: { ...base.settings.notifications.hydration, ...(n.hydration ?? {}) },

@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { useData } from '@/components/DataProvider';
 import LevelBadge from '@/components/LevelBadge';
 import ProgressPanel from '@/components/ProgressPanel';
-import { TASKS, dayXp, formatShort, shiftKey, todayKey } from '@/lib/logic';
+import { dayXp, formatShort, shiftKey, todayKey } from '@/lib/logic';
 import {
   BONUS_XP,
   DIFFICULTIES,
@@ -45,8 +45,8 @@ export default function ProgressionPage() {
   const ladderFrom = Math.max(1, level.level - 2);
   const ladder = Array.from({ length: 7 }, (_, i) => ladderFrom + i);
 
-  const taskMin = Math.min(...TASKS.map((t) => t.xp));
-  const taskMax = Math.max(...TASKS.map((t) => t.xp));
+  const taskMin = Math.min(...data.settings.discipline.map((t) => t.xp));
+  const taskMax = Math.max(...data.settings.discipline.map((t) => t.xp));
   const objMin = DIFFICULTIES[0].xp;
   const objMax = DIFFICULTIES[DIFFICULTIES.length - 1].xp;
 
