@@ -5,6 +5,8 @@ import { useData } from './DataProvider';
 import LevelBadge from './LevelBadge';
 import { dayXp } from '@/lib/logic';
 import { levelFromXp, levelTitle, tierOf, totalXpOf } from '@/lib/xp';
+import { KIND_LABEL, unlockedBetween } from '@/lib/unlocks';
+import Link from 'next/link';
 
 /** Last level this device has celebrated. Per device on purpose: it only decides when to animate. */
 const SEEN_KEY = 'telos:level-seen';
@@ -50,11 +52,14 @@ export default function LevelUp() {
     }
   }, [level]);
 
+  const unlocked = useMemo(() => (shown ? unlockedBetween(shown.from, shown.to, data.wardrobe.items) : []), [shown, data.wardrobe.items]);
+
   useEffect(() => {
     if (!shown) return;
-    const t = setTimeout(() => setShown(null), 4200);
+    // Longer when there is something new to read.
+    const t = setTimeout(() => setShown(null), unlocked.length > 0 ? 7000 : 4200);
     return () => clearTimeout(t);
-  }, [shown]);
+  }, [shown, unlocked.length]);
 
   if (!shown) return null;
 
@@ -84,6 +89,21 @@ export default function LevelUp() {
         </div>
         {tierChanged ? (
           <div className="levelup-tier">Nouveau palier : {newTier.label}</div>
+        ) : null}
+        {unlocked.length > 0 ? (
+          <div className="levelup-unlocks">
+            <span>Débloqué</span>
+            <ul>
+              {unlocked.slice(0, 4).map((u) => (
+                <li key={`${u.kind}-${u.id}`}>
+                  <small>{KIND_LABEL[u.kind]}</small> {u.label}
+                </li>
+              ))}
+            </ul>
+            <Link href="/profil/debloquables" className="link-sm" onClick={() => setShown(null)}>
+              Voir et équiper
+            </Link>
+          </div>
         ) : null}
         <button className="btn btn-accent levelup-btn" onClick={() => setShown(null)} autoFocus>
           Continuer

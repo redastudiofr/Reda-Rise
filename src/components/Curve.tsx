@@ -30,7 +30,7 @@ export default function Curve({
   format,
   formatTooltip,
   periodLabel,
-  color = '#3874dc',
+  color = '#b9334f',
   emptyLabel = 'Encore un peu de données et la courbe apparaît.',
 }: {
   points: Point[];

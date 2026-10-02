@@ -85,7 +85,7 @@ export function buildIcs(e: {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Telos//Network//FR',
+    'PRODID:-//Reda Rise//Network//FR',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',

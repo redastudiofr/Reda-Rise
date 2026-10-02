@@ -1,4 +1,4 @@
-# Telos
+# Reda Rise
 
 Application Next.js (App Router) installable sur iPhone et Android, avec cache
 hors-ligne complet et notifications push réelles (VAPID) qui s'affichent même
@@ -7,7 +7,7 @@ front, routes API et planification des rappels.
 
 ## Ce que fait l'app
 
-Six onglets, pensés pour le pouce sur mobile, dont le profil.
+Sept onglets, pensés pour le pouce sur mobile, dont le profil.
 
 - **Aujourd'hui** — objectifs du jour personnalisables (heure, catégorie,
   validation, filtres), progression de la journée, niveau, jours d'affilée,
@@ -53,6 +53,15 @@ Six onglets, pensés pour le pouce sur mobile, dont le profil.
   participants, ajout au calendrier), messages privés et discussion de groupe
   par événement, notifications, blocage, signalement et modération. Voir
   « Network » plus bas.
+- **Vêtements** (`/vetements`) — la collection Reda Studio : chaque pièce a
+  son prix, ses tailles, son lien de commande (boutique, Instagram…) et l'XP
+  qu'elle rapporte (1 à 200). La boutique s'ouvre dans un nouvel onglet ; la
+  commande confirmée dans l'app rapporte l'XP, une seule fois par pièce. Une
+  pièce peut être réservée à partir d'un niveau (pièce exclusive).
+- **Débloquables** (`/profil/debloquables`) — ce que chaque niveau ouvre :
+  thèmes de couleur pour toute l'app (Bordeaux par défaut, Rubis, Grenat,
+  Cuivre, Or, Néon rouge, Platine, Mythique), cadres pour la photo de profil,
+  titres et pièces exclusives. Annoncés lors de la montée de niveau.
 - **Profil** — identité, récompenses et classement, mensurations.
 - **Réglages** — profil, fuseau horaire, heures de tous les rappels, activation
   des notifications push sur l'appareil, notification de test.

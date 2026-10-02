@@ -1,6 +1,6 @@
 /* Service worker: offline cache + web push. */
 
-const VERSION = 'v5';
+const VERSION = 'v6';
 const STATIC_CACHE = `telos-static-${VERSION}`;
 const PAGE_CACHE = `telos-pages-${VERSION}`;
 
@@ -13,7 +13,7 @@ const PRECACHE = [
   '/icons/icon-512.png',
   '/icons/maskable-512.png',
   '/icons/apple-touch-icon.png',
-  '/icons/telos-wordmark.png',
+  '/icons/reda-studio.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -100,17 +100,17 @@ self.addEventListener('fetch', (event) => {
 /* ---------- push ---------- */
 
 self.addEventListener('push', (event) => {
-  let payload = { title: 'Telos', body: '' };
+  let payload = { title: 'Reda Rise', body: '' };
   if (event.data) {
     try {
       payload = event.data.json();
     } catch (_) {
-      payload = { title: 'Telos', body: event.data.text() };
+      payload = { title: 'Reda Rise', body: event.data.text() };
     }
   }
 
   event.waitUntil(
-    self.registration.showNotification(payload.title || 'Telos', {
+    self.registration.showNotification(payload.title || 'Reda Rise', {
       body: payload.body || '',
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',

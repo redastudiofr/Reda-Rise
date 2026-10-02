@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import Avatar from '@/components/Avatar';
+import FramedAvatar from '@/components/FramedAvatar';
+import { activeCosmetics, allUnlocks } from '@/lib/unlocks';
 import { useData } from '@/components/DataProvider';
 import LevelCard from '@/components/LevelCard';
 import ProgressChart from '@/components/ProgressChart';
@@ -47,6 +48,10 @@ export default function ProfilePage() {
   const [form, setForm] = useState<Record<string, string>>({ date: todayKey(tz) });
 
   const totalXp = useMemo(() => totalXpOf(data, dayXp), [data]);
+  const myLevel = useMemo(() => levelFromXp(totalXp).level, [totalXp]);
+  const worn = activeCosmetics(data.settings.cosmetics, myLevel);
+  const unlocksAll = allUnlocks(data.wardrobe.items);
+  const unlocksDone = unlocksAll.filter((u) => u.level <= myLevel).length;
   const level = levelFromXp(totalXp);
   const streak = useMemo(() => streakOf(data, tz, dayXp), [data, tz]);
   const rewards = useMemo(() => rewardStates(data, dayXp), [data]);
@@ -103,13 +108,16 @@ export default function ProfilePage() {
       <header className="topbar">
         <div>
           <h1>Profil</h1>
-          <p className="sub">{profile.pseudo || profile.name}</p>
+          <p className="sub">
+            {profile.pseudo || profile.name}
+            {worn.title ? <span className="unl-title"> · {worn.title.label}</span> : null}
+          </p>
         </div>
       </header>
 
       <div className="identity">
         <label className="identity-photo">
-          <Avatar src={profile.avatar} name={profile.pseudo || profile.name} size={78} />
+          <FramedAvatar frame={worn.frame} src={profile.avatar} name={profile.pseudo || profile.name} size={78} />
           <input type="file" accept="image/*" onChange={onPickPhoto} hidden />
           <span className="identity-edit">Changer</span>
         </label>
@@ -204,6 +212,17 @@ export default function ProfilePage() {
           </section>
 
           <section className="section">
+            <Link href="/profil/debloquables" className="card row">
+              <div>
+                <div className="ex-name">Débloquables</div>
+                <div className="ex-meta">
+                  Thèmes, cadres photo, titres et pièces exclusives · {unlocksDone} sur {unlocksAll.length} débloqués
+                </div>
+              </div>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 5.5 15.5 12 9 18.5" />
+              </svg>
+            </Link>
             <Link href="/profil/recompenses" className="card row">
               <div>
                 <div className="ex-name">Récompenses et classement</div>

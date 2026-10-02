@@ -33,6 +33,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   timezone: 'Europe/Paris',
   discipline: DEFAULT_DISCIPLINE,
+  cosmetics: {},
   notifications: {
     creatine: { enabled: true, time: '09:00' },
     hydration: { enabled: true, start: '08:00', end: '22:00', everyHours: 2 },
@@ -67,6 +68,7 @@ export function defaultData(): AppData {
     proofs: {},
     player: { id: newPlayerId(), shareToLeaderboard: false },
     rewards: DEFAULT_REWARDS,
+    wardrobe: { items: [], orders: [] },
   };
 }
 
@@ -120,6 +122,7 @@ export function normalizeData(raw: unknown): AppData {
       profile: { ...base.settings.profile, ...(s.profile ?? {}) },
       timezone: s.timezone || base.settings.timezone,
       discipline: normalizeDiscipline(s.discipline),
+      cosmetics: s.cosmetics && typeof s.cosmetics === 'object' ? s.cosmetics : {},
       notifications: {
         creatine: { ...base.settings.notifications.creatine, ...(n.creatine ?? {}) },
         hydration: { ...base.settings.notifications.hydration, ...(n.hydration ?? {}) },
@@ -167,5 +170,9 @@ export function normalizeData(raw: unknown): AppData {
       shareToLeaderboard: d.player?.shareToLeaderboard === true,
     },
     rewards,
+    wardrobe: {
+      items: Array.isArray(d.wardrobe?.items) ? d.wardrobe.items : [],
+      orders: Array.isArray(d.wardrobe?.orders) ? d.wardrobe.orders : [],
+    },
   };
 }

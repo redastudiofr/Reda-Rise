@@ -24,7 +24,7 @@ export const EVENT_KINDS: {
   repeat: Repeat;
   allDay?: boolean;
 }[] = [
-  { id: 'rdv', label: 'Rendez-vous', color: '#4d86ea', duration: 60, repeat: 'none' },
+  { id: 'rdv', label: 'Rendez-vous', color: '#d64a62', duration: 60, repeat: 'none' },
   { id: 'cours', label: 'Cours', color: '#9a7cf0', duration: 90, repeat: 'weekly' },
   { id: 'reunion', label: 'Réunion', color: '#4bb3c4', duration: 60, repeat: 'none' },
   { id: 'evenement', label: 'Événement', color: '#d9a54a', duration: 120, repeat: 'none' },
@@ -64,7 +64,7 @@ export const REPEATS: { id: Repeat; label: string }[] = [
 /** Minutes before the start. */
 export const REMINDER_PRESETS = [5, 15, 30, 60, 1440];
 
-export const PROJECT_COLORS = ['#4d86ea', '#9a7cf0', '#4fb286', '#d9a54a', '#e0806f', '#4bb3c4', '#c47fb4'];
+export const PROJECT_COLORS = ['#d64a62', '#9a7cf0', '#4fb286', '#d9a54a', '#e0806f', '#4bb3c4', '#c47fb4'];
 
 export const OBJECTIVE_COLOR = '#4fb286';
 

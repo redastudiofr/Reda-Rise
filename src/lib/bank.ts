@@ -95,13 +95,13 @@ export type BankStatus = {
 
 export const SPEND_CATEGORIES: { id: SpendCategory; label: string; color: string }[] = [
   { id: 'alimentation', label: 'Alimentation', color: '#4ec38a' },
-  { id: 'logement', label: 'Logement', color: '#4d86ea' },
+  { id: 'logement', label: 'Logement', color: '#d64a62' },
   { id: 'transport', label: 'Transport', color: '#e0a06f' },
   { id: 'shopping', label: 'Shopping', color: '#b47fe0' },
   { id: 'abonnements', label: 'Abonnements', color: '#5ec8d8' },
   { id: 'loisirs', label: 'Loisirs', color: '#e0806f' },
   { id: 'sante', label: 'Santé', color: '#d8b45e' },
-  { id: 'epargne', label: 'Épargne', color: '#7f9fe0' },
+  { id: 'epargne', label: 'Épargne', color: '#d98a9a' },
   { id: 'revenus', label: 'Revenus', color: '#4ec38a' },
   { id: 'autre', label: 'Autre', color: '#767f8c' },
 ];

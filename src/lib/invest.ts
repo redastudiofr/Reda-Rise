@@ -10,7 +10,7 @@ import { simulate, type SimFrequency, type SimPoint } from './business';
  */
 
 export const ASSET_TYPES: { id: AssetType; label: string; color: string }[] = [
-  { id: 'action', label: 'Action', color: '#4d86ea' },
+  { id: 'action', label: 'Action', color: '#d64a62' },
   { id: 'etf', label: 'ETF', color: '#4ec38a' },
   { id: 'crypto', label: 'Crypto', color: '#e0a06f' },
   { id: 'immobilier', label: 'Immobilier', color: '#b47fe0' },
@@ -125,7 +125,7 @@ export type ScenarioId = 'pessimiste' | 'moyen' | 'optimiste';
 
 export const SCENARIOS: { id: ScenarioId; label: string; color: string; offset: number }[] = [
   { id: 'pessimiste', label: 'Pessimiste', color: '#e0806f', offset: -3 },
-  { id: 'moyen', label: 'Moyen', color: '#4d86ea', offset: 0 },
+  { id: 'moyen', label: 'Moyen', color: '#d64a62', offset: 0 },
   { id: 'optimiste', label: 'Optimiste', color: '#4ec38a', offset: +3 },
 ];
 

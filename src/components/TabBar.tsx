@@ -2,7 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import Avatar from './Avatar';
+import { useMemo } from 'react';
+import FramedAvatar from './FramedAvatar';
+import { dayXp } from '@/lib/logic';
+import { activeCosmetics } from '@/lib/unlocks';
+import { levelFromXp, totalXpOf } from '@/lib/xp';
 import { useData } from './DataProvider';
 
 const TABS = [
@@ -10,6 +14,7 @@ const TABS = [
   { href: '/calendrier', label: 'Calendrier', icon: 'calendar' },
   { href: '/finances', label: 'Finances', icon: 'wallet' },
   { href: '/entrepreneuriat', label: 'Business', icon: 'growth' },
+  { href: '/vetements', label: 'Vêtements', icon: 'shirt' },
   { href: '/network', label: 'Network', icon: 'network' },
 ] as const;
 
@@ -47,6 +52,13 @@ function Icon({ name }: { name: string }) {
           <path d="M7.5 13h3M7.5 16.8h3M13.5 13h3M13.5 16.8h3" />
         </svg>
       );
+    case 'shirt':
+      return (
+        <svg {...common}>
+          <path d="M8.5 3.5 4 6l-1.5 4.5 3 1.2V20.5h13V11.7l3-1.2L20 6l-4.5-2.5" />
+          <path d="M8.5 3.5a3.5 3 0 0 0 7 0" />
+        </svg>
+      );
     case 'network':
       return (
         <svg {...common}>
@@ -71,6 +83,8 @@ export default function TabBar() {
   const { data } = useData();
   const profile = data.settings.profile;
   const profileActive = pathname.startsWith('/profil');
+  const level = useMemo(() => levelFromXp(totalXpOf(data, dayXp)).level, [data]);
+  const { frame } = activeCosmetics(data.settings.cosmetics, level);
 
   return (
     <nav className="tabbar">
@@ -89,7 +103,7 @@ export default function TabBar() {
       })}
 
       <Link href="/profil" className="tab tab-profile" data-on={profileActive}>
-        <Avatar src={profile.avatar} name={profile.pseudo || profile.name} size={24} />
+        <FramedAvatar frame={frame} src={profile.avatar} name={profile.pseudo || profile.name} size={frame ? 20 : 24} />
         <span>Profil</span>
       </Link>
     </nav>

@@ -126,7 +126,7 @@ export default function BusinessPage() {
               const k = kpiForMonth(p, month);
               const trend = caTrend(p, month);
               return (
-                <Link key={p.id} href={`/entrepreneuriat/${p.id}`} className="card biz-card" style={{ ['--c' as string]: p.color ?? '#4d86ea' }} data-archived={p.archived}>
+                <Link key={p.id} href={`/entrepreneuriat/${p.id}`} className="card biz-card" style={{ ['--c' as string]: p.color ?? '#d64a62' }} data-archived={p.archived}>
                   <div className="biz-card-top">
                     <span className="biz-avatar" aria-hidden>{p.name.slice(0, 1).toUpperCase()}</span>
                     <span className="biz-card-id">

@@ -9,7 +9,7 @@ import type { MonthFlow } from './finance';
 
 const round2 = (v: number) => Math.round(v * 100) / 100;
 
-export const COMPANY_COLORS = ['#4d86ea', '#c47a36', '#9a7cf0', '#4fb286', '#c47fb4', '#4bb3c4'];
+export const COMPANY_COLORS = ['#d64a62', '#c47a36', '#9a7cf0', '#4fb286', '#c47fb4', '#4bb3c4'];
 
 export type Kpi = { ca: number; depenses: number; benefice: number; marge: number | null; count: number };
 

@@ -33,10 +33,7 @@ export default function LoginPage() {
       <form className="login-box" onSubmit={submit}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="login-mark" src="/icons/icon-192.png" alt="" width={64} height={64} />
-        <h1 className="login-title">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/telos-wordmark.png" alt="Telos" width={1167} height={252} />
-        </h1>
+        <h1 className="login-title">Reda Rise</h1>
         <p className="sub" style={{ textAlign: 'center', margin: '0 0 22px' }}>
           Accès protégé
         </p>
@@ -54,6 +51,8 @@ export default function LoginPage() {
           </button>
         </div>
         {error ? <div className="banner warn">{error}</div> : null}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="login-studio" src="/icons/reda-studio.png" alt="Reda Studio" width={1712} height={177} />
       </form>
     </main>
   );

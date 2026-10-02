@@ -59,9 +59,14 @@ export default function ProgressionPage() {
             Niveau {level.level} · {level.title}
           </p>
         </div>
-        <Link href="/profil/recompenses" className="link-sm">
-          Récompenses
-        </Link>
+        <span className="prog-links">
+          <Link href="/profil/debloquables" className="link-sm">
+            Débloquables
+          </Link>
+          <Link href="/profil/recompenses" className="link-sm">
+            Récompenses
+          </Link>
+        </span>
       </header>
 
       <div className="prog-grid">
@@ -165,7 +170,7 @@ export default function ProgressionPage() {
                   const objectives = day.items.filter((i) => i.source === 'objectif');
                   const tasks = day.items.filter((i) => i.source === 'tache');
                   const tasksXp = tasks.reduce((a, i) => a + i.xp, 0);
-                  const others = day.items.filter((i) => i.source === 'bonus' || i.source === 'finance');
+                  const others = day.items.filter((i) => i.source === 'bonus' || i.source === 'finance' || i.source === 'vetement');
                   return (
                     <div key={day.date} className="prog-day">
                       <div className="prog-day-head">

@@ -3,11 +3,11 @@ import './globals.css';
 import AppShell from '@/components/AppShell';
 
 export const metadata: Metadata = {
-  title: 'Telos',
-  applicationName: 'Telos',
+  title: 'Reda Rise',
+  applicationName: 'Reda Rise',
   description: 'Objectifs du jour, calendrier, finances, business et réseau d’entrepreneurs.',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Telos' },
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Reda Rise' },
   icons: {
     icon: [
       { url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' },

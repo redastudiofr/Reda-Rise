@@ -6,6 +6,7 @@ import DataProvider, { useData } from './DataProvider';
 import TabBar from './TabBar';
 import Loader from './Loader';
 import LevelUp from './LevelUp';
+import ThemeApplier from './ThemeApplier';
 import NetworkShell from './network/NetworkShell';
 
 function useServiceWorker() {
@@ -30,6 +31,7 @@ function Booted({ children }: { children: React.ReactNode }) {
       <div className="shell">{children}</div>
       <TabBar />
       <LevelUp />
+      <ThemeApplier />
     </>
   );
 }

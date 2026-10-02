@@ -1,6 +1,7 @@
 import type { AppData, Category, DailyEntry, Difficulty, Objective, Reward } from './types';
 import { checklistComplete, dayXp, entryChecklist, shiftKey, todayKey, weekdayOf } from './logic';
 import { financeActivityDates, financeXpOnDate, suggestGoalXp } from './business';
+import { wardrobeXpOnDate } from './wardrobe';
 
 /* ---------- niveaux ---------- */
 
@@ -208,7 +209,7 @@ export const STREAK_MILESTONES: { days: number; xp: number }[] = [
   { days: 365, xp: 1000 },
 ];
 
-export type XpSource = 'objectif' | 'tache' | 'bonus' | 'finance';
+export type XpSource = 'objectif' | 'tache' | 'bonus' | 'finance' | 'vetement';
 
 export type XpItem = { source: XpSource; label: string; xp: number };
 
@@ -248,6 +249,7 @@ function ledgerOf(data: AppData, taskXp: TaskXp): Ledger {
       ...financeActivityDates(data),
       ...workoutDates,
       ...data.savingsGoals.flatMap((g) => (g.achievedAt ? [g.achievedAt] : [])),
+      ...(data.wardrobe?.orders ?? []).map((o) => o.date),
     ]),
   ].sort();
   const byId = new Map(data.objectives.map((o) => [o.id, o]));
@@ -277,6 +279,8 @@ function ledgerOf(data: AppData, taskXp: TaskXp): Ledger {
         items.push({ source: 'finance', label: `Objectif d’épargne atteint : ${g.label}`, xp: suggestGoalXp(g.target) });
       }
     }
+
+    for (const o of wardrobeXpOnDate(data, date)) items.push({ source: 'vetement', ...o });
 
     const planned = objectivesForDate(data.objectives, date);
     if (planned.length > 0 && planned.every((o) => done.includes(o.id))) {

@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Telos",
-  "short_name": "Telos",
+  "name": "Reda Rise",
+  "short_name": "Reda Rise",
   "description": "Objectifs du jour, calendrier, finances, business et réseau d’entrepreneurs.",
   "lang": "fr",
   "dir": "ltr",
@@ -50,8 +50,8 @@
       "url": "/entrepreneuriat"
     },
     {
-      "name": "Network",
-      "url": "/network"
+      "name": "Vêtements",
+      "url": "/vetements"
     }
   ]
 }

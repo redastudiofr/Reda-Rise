@@ -14,7 +14,7 @@ import { formatMoneyExact, monthKey, previousMonth } from './business';
 /* ---------- comptes ---------- */
 
 export const ACCOUNT_TYPES: { id: AccountType; label: string; color: string }[] = [
-  { id: 'courant', label: 'Compte bancaire', color: '#4d86ea' },
+  { id: 'courant', label: 'Compte bancaire', color: '#d64a62' },
   { id: 'epargne', label: 'Épargne', color: '#4fb286' },
   { id: 'especes', label: 'Espèces', color: '#d9a54a' },
   { id: 'autre', label: 'Autre', color: '#9a7cf0' },
@@ -252,11 +252,11 @@ export function monthlyFlows(entries: FinanceEntry[], lastMonth: string, count: 
  * Income and spending in charts: blue and orange stay apart for every common
  * colour-vision deficiency (checked with the palette validator on the dark surface).
  */
-export const FLOW_COLORS = { revenus: '#4d86ea', depenses: '#c47a36' } as const;
+export const FLOW_COLORS = { revenus: '#b9334f', depenses: '#b48f3c' } as const;
 
 /* ---------- objectifs d'épargne ---------- */
 
-export const GOAL_COLORS = ['#4fb286', '#4d86ea', '#d9a54a', '#9a7cf0', '#c47fb4', '#4bb3c4'];
+export const GOAL_COLORS = ['#4fb286', '#d64a62', '#d9a54a', '#9a7cf0', '#c47fb4', '#4bb3c4'];
 
 export function goalProgress(g: SavingsGoal): number {
   return g.target > 0 ? Math.max(0, Math.min(1, g.current / g.target)) : 0;

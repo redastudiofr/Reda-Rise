@@ -448,7 +448,52 @@ export type Settings = {
   notifications: NotificationSettings;
   /** The user's own Discipline checklist: 1 to 15 items. */
   discipline: DisciplineTask[];
+  /** Unlockables the user chose to wear (ids from lib/unlocks.ts). */
+  cosmetics: Cosmetics;
 };
+
+export type Cosmetics = { theme?: string; frame?: string; title?: string };
+
+/* ---------- vêtements ---------- */
+
+/** A piece of the clothing range, orderable through its shop link. */
+export type ClothingItem = {
+  id: string;
+  name: string;
+  description?: string;
+  /** Euros. */
+  price: number;
+  /** Small data URL, resized in the browser. */
+  photo?: string;
+  sizes: string[];
+  /** Where the order is placed: shop page, Instagram, WhatsApp… (https). */
+  orderUrl?: string;
+  /** XP earned the first time this piece is ordered (1 to 200). */
+  xp: number;
+  /** Exclusive piece: orderable from this level on. */
+  minLevel?: number;
+  createdAt: string;
+  archived?: boolean;
+};
+
+export type ClothingOrder = {
+  id: string;
+  itemId: string;
+  /** Copies, so the history stays right if the piece changes or is deleted. */
+  name: string;
+  price: number;
+  size?: string;
+  /**
+   * The piece's XP when ordered. Only the earliest order of a piece counts
+   * (lib/wardrobe.ts ordersWithXp): removing it moves the XP to the next one.
+   */
+  xp: number;
+  /** YYYY-MM-DD, local. */
+  date: string;
+  createdAt: string;
+};
+
+export type Wardrobe = { items: ClothingItem[]; orders: ClothingOrder[] };
 
 export type AppData = {
   version: number;
@@ -480,6 +525,8 @@ export type AppData = {
   /** Photo proofs, keyed by `proofKey(date, objectiveId)`. */
   proofs: Record<string, ObjectiveProof>;
   player: Player;
+  /** Clothing range and the user's orders. */
+  wardrobe: Wardrobe;
 };
 
 export type PushSub = {

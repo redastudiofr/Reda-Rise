@@ -218,7 +218,7 @@ export default function ProgressChart({
             </linearGradient>
             <linearGradient id={`pc-line-${uid}`} x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="var(--brand)" />
-              <stop offset="100%" stopColor="#7aa7f5" />
+              <stop offset="100%" stopColor="#f08a9c" />
             </linearGradient>
           </defs>
 

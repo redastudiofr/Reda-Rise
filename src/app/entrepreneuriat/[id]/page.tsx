@@ -162,7 +162,7 @@ export default function CompanyPage() {
   }
 
   return (
-    <div className="biz" style={{ ['--c' as string]: c.color ?? '#4d86ea' }}>
+    <div className="biz" style={{ ['--c' as string]: c.color ?? '#d64a62' }}>
       {editing ? (
         <CompanySheet
           initial={c}
