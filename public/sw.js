@@ -1,6 +1,6 @@
 /* Service worker: offline cache + web push. */
 
-const VERSION = 'v6';
+const VERSION = 'v7';
 const STATIC_CACHE = `telos-static-${VERSION}`;
 const PAGE_CACHE = `telos-pages-${VERSION}`;
 

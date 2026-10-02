@@ -7,7 +7,8 @@ import ClothingSheet, { type ClothingDraft } from '@/components/wardrobe/Clothin
 import OrderSheet from '@/components/wardrobe/OrderSheet';
 import { dayXp, todayKey, uid } from '@/lib/logic';
 import type { ClothingItem, ClothingOrder } from '@/lib/types';
-import { isLocked, orderedIds, ordersWithXp } from '@/lib/wardrobe';
+import type { ShopProduct } from '@/lib/shop';
+import { SHOP_URL, isLocked, orderedIds, ordersWithXp, safePhoto, suggestClothingXp } from '@/lib/wardrobe';
 import { levelFromXp, totalXpOf } from '@/lib/xp';
 
 const euro = (n: number) => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
@@ -21,6 +22,43 @@ export default function WardrobePage() {
   const [viewing, setViewing] = useState<ClothingItem | null>(null);
   const [burst, setBurst] = useState<{ id: number; amount: number; title: string } | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  /** Brings in the redastudio.fr catalogue: new pieces are added, known ones updated (XP and level kept). */
+  async function importShop() {
+    setImporting(true);
+    setImportMsg(null);
+    try {
+      const res = await fetch('/api/shop/catalog', { cache: 'no-store' });
+      const json = (await res.json().catch(() => ({}))) as { products?: ShopProduct[]; error?: string };
+      if (!res.ok || !json.products) throw new Error(json.error ?? 'Import impossible.');
+      const products = json.products;
+      const merge = (list: ClothingItem[]) => {
+        const items = [...list];
+        let added = 0;
+        let updated = 0;
+        for (const p of products) {
+          const i = items.findIndex((it) => it.shopId === p.shopId || it.orderUrl === p.orderUrl);
+          const fields = { name: p.name, price: p.price, photo: p.photo, sizes: p.sizes, orderUrl: p.orderUrl, description: p.description, shopId: p.shopId };
+          if (i >= 0) {
+            items[i] = { ...items[i], ...fields };
+            updated++;
+          } else {
+            items.push({ ...fields, id: `shop-${p.shopId}`, xp: suggestClothingXp(p.price), createdAt: new Date().toISOString() });
+            added++;
+          }
+        }
+        return { items, added, updated };
+      };
+      const { added, updated } = merge(data.wardrobe.items);
+      update((x) => ({ ...x, wardrobe: { ...x.wardrobe, items: merge(x.wardrobe.items).items } }));
+      setImportMsg({ ok: true, text: products.length ? `${added} pièce${added > 1 ? 's' : ''} ajoutée${added > 1 ? 's' : ''}, ${updated} mise${updated > 1 ? 's' : ''} à jour depuis redastudio.fr.` : 'La boutique ne publie aucune pièce pour l’instant.' });
+    } catch (e) {
+      setImportMsg({ ok: false, text: (e as Error).message });
+    }
+    setImporting(false);
+  }
 
   const ordered = orderedIds(data);
   const orders = useMemo(() => ordersWithXp(data.wardrobe.orders).reverse(), [data.wardrobe.orders]);
@@ -96,11 +134,25 @@ export default function WardrobePage() {
       <header className="topbar">
         <div>
           <h1>Vêtements</h1>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="wr-brand" src="/icons/reda-studio.png" alt="Reda Studio" width={1712} height={177} />
+          <a href={SHOP_URL} target="_blank" rel="noopener noreferrer" className="wr-shop-link" aria-label="Ouvrir redastudio.fr">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="wr-brand" src="/icons/reda-studio.png" alt="Reda Studio" width={1712} height={177} />
+            <span>redastudio.fr ↗</span>
+          </a>
         </div>
         <button className="btn btn-accent btn-sm" onClick={() => setEditing('new')}>+ Ajouter</button>
       </header>
+
+      <div className="wr-import">
+        <button className="btn btn-ghost btn-sm" onClick={importShop} disabled={importing}>
+          {importing ? 'Import en cours…' : 'Importer la collection de redastudio.fr'}
+        </button>
+        {importMsg ? (
+          <div className={importMsg.ok ? 'banner' : 'banner warn'} role="status">
+            {importMsg.text}
+          </div>
+        ) : null}
+      </div>
 
       <section className="wr-stats">
         <div className="card">
@@ -120,7 +172,7 @@ export default function WardrobePage() {
       {items.length === 0 ? (
         <div className="card dash-empty">
           <b>Aucune pièce pour l’instant.</b>
-          <span>Ajoute les vêtements de ta collection avec leur prix, leurs tailles, leur lien de commande et l’XP qu’ils rapportent.</span>
+          <span>Importe la collection de redastudio.fr, ou ajoute une pièce avec son lien redastudio.fr, ses tailles et l’XP qu’elle rapporte.</span>
           <button className="btn btn-accent" style={{ marginTop: 10 }} onClick={() => setEditing('new')}>Ajouter une pièce</button>
         </div>
       ) : (
@@ -131,9 +183,9 @@ export default function WardrobePage() {
             return (
               <button key={i.id} className="card wr-card" data-locked={locked} data-archived={i.archived} onClick={() => setViewing(i)}>
                 <span className="wr-img">
-                  {i.photo ? (
+                  {safePhoto(i.photo) ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={i.photo} alt="" />
+                    <img src={safePhoto(i.photo)} alt="" loading="lazy" />
                   ) : (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                       <path d="M8.5 3.5 4 6l-1.5 4.5 3 1.2V20.5h13V11.7l3-1.2L20 6l-4.5-2.5" />

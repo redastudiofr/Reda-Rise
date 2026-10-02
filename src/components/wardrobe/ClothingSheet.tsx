@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { dataUrlBytes, resizeToDataUrl } from '@/lib/image';
 import type { ClothingItem } from '@/lib/types';
-import { CLOTHING_XP, SIZES, clampClothingXp, safeOrderUrl, suggestClothingXp } from '@/lib/wardrobe';
+import { CLOTHING_XP, SHOP_URL, SIZES, clampClothingXp, safeOrderUrl, safePhoto, suggestClothingXp } from '@/lib/wardrobe';
 
 export type ClothingDraft = Omit<ClothingItem, 'id' | 'createdAt'>;
 
@@ -25,7 +25,8 @@ export default function ClothingSheet({
   const [price, setPrice] = useState(initial ? String(initial.price) : '');
   const [xp, setXp] = useState(initial ? String(initial.xp) : '');
   const [xpTouched, setXpTouched] = useState(Boolean(initial));
-  const [sizes, setSizes] = useState<string[]>(initial?.sizes ?? ['S', 'M', 'L', 'XL']);
+  const [sizes, setSizes] = useState<string[]>(initial?.sizes?.length ? initial.sizes : ['S', 'M', 'L', 'XL']);
+  const sizeChoices = [...SIZES, ...sizes.filter((s) => !SIZES.includes(s))];
   const [url, setUrl] = useState(initial?.orderUrl ?? '');
   const [minLevel, setMinLevel] = useState(initial?.minLevel ? String(initial.minLevel) : '');
   const [description, setDescription] = useState(initial?.description ?? '');
@@ -51,16 +52,17 @@ export default function ClothingSheet({
     if (!name.trim()) return setError('Donne un nom à la pièce.');
     if (!Number.isFinite(p) || p < 0) return setError('Prix invalide.');
     if (sizes.length === 0) return setError('Choisis au moins une taille.');
-    const link = url.trim() ? safeOrderUrl(url) : null;
-    if (url.trim() && !link) return setError('Le lien de commande doit commencer par https://');
+    const link = safeOrderUrl(url);
+    if (!link) return setError('Seules les pièces de redastudio.fr sont acceptées : colle le lien de la pièce sur redastudio.fr.');
     const lvl = minLevel.trim() ? Math.round(Number(minLevel)) : undefined;
     if (lvl !== undefined && (!Number.isFinite(lvl) || lvl < 1 || lvl > 100)) return setError('Niveau requis : entre 1 et 100.');
     onSave({
       name: name.trim().slice(0, 60),
       price: Math.round(p * 100) / 100,
       xp: clampClothingXp(shownXp || suggestClothingXp(p)),
-      sizes: SIZES.filter((s) => sizes.includes(s)),
-      orderUrl: link ?? undefined,
+      sizes: sizeChoices.filter((s) => sizes.includes(s)),
+      orderUrl: link,
+      shopId: initial?.shopId,
       minLevel: lvl && lvl > 1 ? lvl : undefined,
       description: description.trim().slice(0, 400) || undefined,
       photo: photo || undefined,
@@ -77,7 +79,7 @@ export default function ClothingSheet({
         <div className="wr-photo-row">
           {photo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="wr-photo-preview" src={photo} alt="" />
+            <img className="wr-photo-preview" src={safePhoto(photo)} alt="" />
           ) : (
             <span className="wr-photo-preview wr-photo-empty" aria-hidden />
           )}
@@ -117,7 +119,7 @@ export default function ClothingSheet({
         <div className="field">
           <span>Tailles disponibles</span>
           <div className="chip-grid">
-            {SIZES.map((s) => (
+            {sizeChoices.map((s) => (
               <button
                 key={s}
                 type="button"
@@ -132,8 +134,8 @@ export default function ClothingSheet({
           </div>
         </div>
         <label className="field">
-          <span>Lien de commande (boutique, Instagram, WhatsApp…)</span>
-          <input className="input" type="url" inputMode="url" value={url} placeholder="https://…" onChange={(e) => setUrl(e.target.value)} />
+          <span>Lien de la pièce sur redastudio.fr</span>
+          <input className="input" type="url" inputMode="url" value={url} placeholder={`${SHOP_URL}/products/…`} onChange={(e) => setUrl(e.target.value)} />
         </label>
         <label className="field">
           <span>Pièce exclusive : niveau requis (facultatif)</span>

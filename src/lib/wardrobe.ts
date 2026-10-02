@@ -20,14 +20,36 @@ export function suggestClothingXp(price: number): number {
   return Math.min(CLOTHING_XP.max, Math.max(10, Math.round(price / 2)));
 }
 
-/** Only web links open a shop: no javascript:, data: or other schemes. */
+/** The only shop pieces can be bought from. */
+export const SHOP_URL = 'https://redastudio.fr';
+export const SHOP_HOST = 'redastudio.fr';
+
+/**
+ * A link to a page of redastudio.fr, or null. Anything else — another shop,
+ * javascript:, http — is refused. A bare path ("/products/hoodie") is
+ * completed with the shop's address.
+ */
 export function safeOrderUrl(v: string | undefined): string | null {
-  if (!v) return null;
+  const raw = (v ?? '').trim();
+  if (!raw) return null;
   try {
-    const u = new URL(v.trim());
-    return u.protocol === 'https:' || u.protocol === 'http:' ? u.toString() : null;
+    const u = new URL(raw.startsWith('/') ? `${SHOP_URL}${raw}` : /^[a-z]+:/i.test(raw) ? raw : `https://${raw}`);
+    const host = u.hostname.toLowerCase();
+    if (u.protocol !== 'https:' || (host !== SHOP_HOST && !host.endsWith(`.${SHOP_HOST}`))) return null;
+    return u.toString();
   } catch {
     return null;
+  }
+}
+
+/** Photos are either resized in the app (data URL) or served by the shop over https. */
+export function safePhoto(v: string | undefined): string | undefined {
+  if (!v) return undefined;
+  if (/^data:image\/(jpeg|png|webp);base64,/.test(v)) return v;
+  try {
+    return new URL(v).protocol === 'https:' ? v : undefined;
+  } catch {
+    return undefined;
   }
 }
 

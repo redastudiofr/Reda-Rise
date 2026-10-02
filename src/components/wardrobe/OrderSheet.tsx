@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { ClothingItem } from '@/lib/types';
-import { safeOrderUrl } from '@/lib/wardrobe';
+import { safeOrderUrl, safePhoto } from '@/lib/wardrobe';
 
 /**
  * Ordering a piece: the shop opens in a new tab, then the user confirms the
@@ -32,9 +32,9 @@ export default function OrderSheet({
     <div className="sheet-backdrop" onClick={onClose}>
       <div className="sheet wr-sheet" role="dialog" aria-label={item.name} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-grip" />
-        {item.photo ? (
+        {safePhoto(item.photo) ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="wr-order-photo" src={item.photo} alt={item.name} />
+          <img className="wr-order-photo" src={safePhoto(item.photo)} alt={item.name} />
         ) : null}
         <div className="wr-order-head">
           <div>
@@ -74,11 +74,11 @@ export default function OrderSheet({
                   setOpened(true);
                 }}
               >
-                {needsSize ? 'Choisis ta taille' : 'Commander sur la boutique'}
+                {needsSize ? 'Choisis ta taille' : 'Commander sur redastudio.fr'}
               </a>
             ) : (
               <div className="banner warn">
-                Pas encore de lien de commande pour cette pièce.{' '}
+                Cette pièce n’a pas de lien valide vers redastudio.fr, la seule boutique acceptée.{' '}
                 <button type="button" className="link-sm" onClick={onEdit}>Ajouter le lien</button>
               </div>
             )}
@@ -88,7 +88,7 @@ export default function OrderSheet({
                 <p className="hint">
                   {opened
                     ? 'Une fois ta commande passée sur la boutique, confirme-la ici.'
-                    : 'La boutique s’ouvre dans un nouvel onglet. Reviens ensuite confirmer ta commande.'}
+                    : 'redastudio.fr s’ouvre dans un nouvel onglet. Reviens ensuite confirmer ta commande.'}
                 </p>
                 <button className="btn btn-ghost" disabled={needsSize} onClick={() => onConfirm(size)}>
                   J’ai passé commande{alreadyOrdered ? '' : ` · +${item.xp} XP`}

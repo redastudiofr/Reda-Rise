@@ -55,7 +55,6 @@ export async function readPushState(): Promise<PushState> {
 /**
  * Asks for permission (must run from a tap), subscribes this device and
  * registers it with the server. Resolves to the resulting state.
- * The Network registers the device for a member instead, on its own routes.
  */
 export async function enablePush(
   routes: { key: string; register: string } = { key: '/api/push/key', register: '/api/push/subscribe' },

@@ -7,7 +7,7 @@ front, routes API et planification des rappels.
 
 ## Ce que fait l'app
 
-Sept onglets, pensés pour le pouce sur mobile, dont le profil.
+Six onglets, pensés pour le pouce sur mobile, dont le profil.
 
 - **Aujourd'hui** — objectifs du jour personnalisables (heure, catégorie,
   validation, filtres), progression de la journée, niveau, jours d'affilée,
@@ -46,18 +46,14 @@ Sept onglets, pensés pour le pouce sur mobile, dont le profil.
   estimé, marge, trésorerie, évolution mensuelle (graphiques), objectifs (CA,
   bénéfice ou chiffre libre), étapes, projets et tâches (partagés avec le
   calendrier), opérations.
-- **Network** (`/network`) — réseau d'entrepreneurs, avec des comptes membres
-  séparés du mot de passe de l'app. Profils (pseudo, photo, entreprise,
-  secteur, compétences, centres d'intérêt, grande ville ou région, description),
-  recherche, carte de France approximative, événements (création, participation,
-  participants, ajout au calendrier), messages privés et discussion de groupe
-  par événement, notifications, blocage, signalement et modération. Voir
-  « Network » plus bas.
-- **Vêtements** (`/vetements`) — la collection Reda Studio : chaque pièce a
-  son prix, ses tailles, son lien de commande (boutique, Instagram…) et l'XP
-  qu'elle rapporte (1 à 200). La boutique s'ouvre dans un nouvel onglet ; la
-  commande confirmée dans l'app rapporte l'XP, une seule fois par pièce. Une
-  pièce peut être réservée à partir d'un niveau (pièce exclusive).
+
+- **Vêtements** (`/vetements`) — uniquement les pièces de la boutique
+  redastudio.fr. « Importer la collection » lit le catalogue public de la
+  boutique (Shopify `/products.json` ou WooCommerce Store API) et ajoute ou
+  met à jour les pièces ; on peut aussi en ajouter une à la main, avec son
+  lien redastudio.fr (tout autre site est refusé). Chaque pièce rapporte son
+  XP (1 à 200) une seule fois, à la première commande confirmée. Une pièce
+  peut être réservée à partir d'un niveau (pièce exclusive).
 - **Débloquables** (`/profil/debloquables`) — ce que chaque niveau ouvre :
   thèmes de couleur pour toute l'app (Bordeaux par défaut, Rubis, Grenat,
   Cuivre, Or, Néon rouge, Platine, Mythique), cadres pour la photo de profil,
@@ -91,7 +87,6 @@ sur Vercel (Project → Settings → Environment Variables).
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Paire de clés Web Push |
 | `VAPID_SUBJECT` | `mailto:` de contact exigé par le protocole VAPID |
 | `POSTGRES_URL` | Chaîne de connexion Postgres (ajoutée automatiquement par l'intégration) |
-| `NETWORK_INVITE_CODE` | Facultatif : code demandé à l'inscription au Network |
 
 Toutes, sauf `APP_PASSWORD`, ont une valeur de repli codée dans le projet pour
 qu'un premier déploiement fonctionne immédiatement. Ces valeurs par défaut sont
@@ -242,7 +237,6 @@ src/
     calendrier/            Agenda : vues, tâches, projets
     finances/              Comptes, dépenses, abonnements, épargne
     entrepreneuriat/       Entreprises et tableau de bord par entreprise
-    network/               Découvrir, carte, événements, messages, profil, modération
     finances/investir/     Portefeuille d'investissement
     profil/                Profil, mensurations ; recompenses/ et classement
     reglages/              Profil, rappels, activation push
@@ -256,8 +250,6 @@ src/
       cron/notify          Envoi des rappels dus
       bank, market         Connecteurs optionnels (agrégateur bancaire, cotations)
       leaderboard          Classement partagé
-      network/             Comptes membres, profils, carte, événements, messages,
-                           blocages, signalements, modération, notifications
   lib/
     program.ts             Données par défaut, migration, planning de la semaine
     logic.ts               Dates, checklist Discipline
@@ -268,8 +260,6 @@ src/
     push.ts                Envoi web-push (VAPID)
     db.ts                  Postgres, avec repli en mémoire
     auth.ts                Cookie HMAC (Web Crypto, compatible middleware)
-    network/               Network : stockage, sessions membres, validation,
-                           villes et régions, contour de la France, .ics
   middleware.ts            Protection des routes du propriétaire
 public/
   manifest.webmanifest     Manifeste PWA
@@ -292,45 +282,6 @@ public/
 - Déconnexion : l'autorisation est retirée chez le fournisseur et le lien
   supprimé ; l'historique peut être gardé ou effacé.
 
-## Network
-
-Le Network est la seule partie de l'app ouverte à d'autres personnes.
-
-- **Activation** : il reste désactivé tant que ces trois points ne sont pas
-  réglés — `APP_PASSWORD` défini (sinon les membres verraient tes données
-  personnelles), `AUTH_SECRET` d'au moins 32 caractères aléatoires, et une base
-  Postgres (`POSTGRES_URL`) : profils, événements et messages sont partagés, une
-  copie en mémoire par instance serveur les perdrait. La page `/network` liste
-  ce qui manque.
-- **Comptes membres** : email + mot de passe (10 caractères minimum, haché avec
-  scrypt), session aléatoire dans un cookie httpOnly dont seule l'empreinte
-  SHA-256 est stockée. Le propriétaire crée son propre compte membre ; son mot
-  de passe d'app ne sert qu'à la modération (`/network/moderation`). Un membre
-  n'a accès à aucune route du propriétaire (`/api/data`, banque…).
-- **Vie privée** : l'email n'est jamais montré. Le lieu est une grande ville
-  choisie dans une liste (ou seulement la région) ; les adresses, codes postaux
-  et coordonnées sont refusés dans les profils et les événements. La carte ne
-  place une ville qu'à partir de 3 membres, sinon ils sont comptés dans la
-  région. Profil masquable, messages privés désactivables, suppression du compte
-  et de toutes ses données.
-- **Événements** : lieu approximatif ; l'adresse se donne dans la discussion
-  réservée aux participants. Fichier `.ics` pour tout calendrier ; le
-  propriétaire peut aussi ajouter l'événement à son calendrier de l'app.
-- **Messages** : conversations privées et groupe par événement, mis à jour
-  toutes les 4 s quand la page est ouverte, compteur de non-lus, notifications
-  push sans le contenu du message.
-- **Protection** : blocage (réciproque et silencieux), signalement d'un profil,
-  d'un message ou d'un événement, modération (classer, supprimer le contenu,
-  suspendre le compte). Limites : 5 inscriptions par heure et par connexion,
-  8 tentatives de connexion par email en 15 min, 20 messages par minute et 500
-  par jour, messages identiques refusés, 3 nouvelles conversations par jour
-  pendant les premières 24 h puis 15, 5 événements par jour. Les écritures
-  doivent venir du site lui-même (contrôle d'origine).
-- **Non inclus** : pas de vérification de l'adresse email (il faudrait un
-  service d'envoi d'emails, par ex. Resend ou Postmark) ni de réinitialisation
-  du mot de passe par email ; le code d'invitation (`NETWORK_INVITE_CODE`)
-  permet de limiter qui s'inscrit. Carte : contour Natural Earth (domaine
-  public) régénéré avec `node scripts/build-france-outline.mjs`.
 
 ## Notes
 

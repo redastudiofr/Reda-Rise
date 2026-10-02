@@ -15,7 +15,6 @@ const TABS = [
   { href: '/finances', label: 'Finances', icon: 'wallet' },
   { href: '/entrepreneuriat', label: 'Business', icon: 'growth' },
   { href: '/vetements', label: 'Vêtements', icon: 'shirt' },
-  { href: '/network', label: 'Network', icon: 'network' },
 ] as const;
 
 function Icon({ name }: { name: string }) {
@@ -57,15 +56,6 @@ function Icon({ name }: { name: string }) {
         <svg {...common}>
           <path d="M8.5 3.5 4 6l-1.5 4.5 3 1.2V20.5h13V11.7l3-1.2L20 6l-4.5-2.5" />
           <path d="M8.5 3.5a3.5 3 0 0 0 7 0" />
-        </svg>
-      );
-    case 'network':
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="6" r="2.6" />
-          <circle cx="5.5" cy="17" r="2.6" />
-          <circle cx="18.5" cy="17" r="2.6" />
-          <path d="M10.7 8.3 6.8 14.7M13.3 8.3l3.9 6.4M8.1 17h7.8" />
         </svg>
       );
     default:

@@ -7,7 +7,6 @@ import TabBar from './TabBar';
 import Loader from './Loader';
 import LevelUp from './LevelUp';
 import ThemeApplier from './ThemeApplier';
-import NetworkShell from './network/NetworkShell';
 
 function useServiceWorker() {
   useEffect(() => {
@@ -42,20 +41,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (pathname === '/login' || pathname === '/offline') return <>{children}</>;
 
-  // The Network is also used by other entrepreneurs: only the owner gets their data loaded.
-  if (pathname === '/network' || pathname.startsWith('/network/')) {
-    return (
-      <NetworkShell
-        ownerShell={(inner) => (
-          <DataProvider>
-            <Booted>{inner}</Booted>
-          </DataProvider>
-        )}
-      >
-        {children}
-      </NetworkShell>
-    );
-  }
 
   return (
     <DataProvider>

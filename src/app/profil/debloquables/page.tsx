@@ -7,6 +7,7 @@ import FramedAvatar from '@/components/FramedAvatar';
 import { dayXp } from '@/lib/logic';
 import type { Cosmetics } from '@/lib/types';
 import { FRAMES, THEMES, TITLES, activeCosmetics, allUnlocks } from '@/lib/unlocks';
+import { safePhoto } from '@/lib/wardrobe';
 import { levelFromXp, totalXpOf, xpForLevel } from '@/lib/xp';
 
 function Lock({ level }: { level: number }) {
@@ -145,7 +146,7 @@ export default function UnlockablesPage() {
               <Link key={i.id} href="/vetements" className="card unl-item" data-on={level >= i.minLevel!}>
                 {i.photo ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img className="unl-photo" src={i.photo} alt="" />
+                  <img className="unl-photo" src={safePhoto(i.photo)} alt="" />
                 ) : (
                   <span className="unl-swatch" />
                 )}

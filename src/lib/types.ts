@@ -70,8 +70,6 @@ export type CalEvent = {
   /** Minutes before the start; an all-day item counts from 09:00. */
   reminders: number[];
   createdAt: string;
-  /** Set when the event was added from the Network, to avoid adding it twice. */
-  networkEventId?: string;
 };
 
 export type TaskPriority = 'basse' | 'normale' | 'haute' | 'urgente';
@@ -463,11 +461,13 @@ export type ClothingItem = {
   description?: string;
   /** Euros. */
   price: number;
-  /** Small data URL, resized in the browser. */
+  /** Small data URL resized in the browser, or the shop's https image. */
   photo?: string;
   sizes: string[];
-  /** Where the order is placed: shop page, Instagram, WhatsApp… (https). */
+  /** Its page on redastudio.fr, where the order is placed. */
   orderUrl?: string;
+  /** Product id on the shop, for pieces imported from redastudio.fr. */
+  shopId?: string;
   /** XP earned the first time this piece is ordered (1 to 200). */
   xp: number;
   /** Exclusive piece: orderable from this level on. */
