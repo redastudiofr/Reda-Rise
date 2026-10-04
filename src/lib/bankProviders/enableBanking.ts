@@ -1,5 +1,6 @@
 import { createHash, createPrivateKey, createSign } from 'crypto';
 import { classify } from '../bank';
+import { toCents } from '../money';
 import type { BankAccount, BankAccountKind, BankTransaction } from '../types';
 
 /**
@@ -239,7 +240,7 @@ export async function getTransactions(uid: string, dateFrom: string): Promise<Ra
 
 const BALANCE_PREFERENCE = ['ITAV', 'CLAV', 'ITBD', 'CLBD', 'XPCD', 'OTHR'];
 
-/** The most "available now" balance the bank reports. */
+/** The most "available now" balance the bank reports, in cents. */
 export function pickBalance(balances: RawBalance[]): number | undefined {
   const sorted = [...balances].sort(
     (a, b) =>
@@ -247,8 +248,8 @@ export function pickBalance(balances: RawBalance[]): number | undefined {
       (BALANCE_PREFERENCE.indexOf(b.balance_type ?? 'OTHR') + 99) % 99,
   );
   for (const b of sorted) {
-    const n = Number(b.balance_amount?.amount);
-    if (Number.isFinite(n)) return Math.round(n * 100) / 100;
+    const cents = toCents(String(b.balance_amount?.amount ?? ''));
+    if (cents !== null) return cents;
   }
   return undefined;
 }
@@ -271,7 +272,7 @@ export function accountKind(raw: RawAccount): BankAccountKind {
 export function toAccount(
   raw: RawAccount,
   ids: { id: string; connectionId: string },
-  balance: number | undefined,
+  balanceCents: number | undefined,
   today: string,
 ): BankAccount {
   const iban = raw.account_id?.iban ?? raw.account_id?.other?.identification;
@@ -282,7 +283,7 @@ export function toAccount(
     kind: accountKind(raw),
     // Only the last four characters: enough to tell accounts apart.
     iban4: iban ? iban.replace(/\s/g, '').slice(-4) : undefined,
-    balance,
+    balanceCents,
     currency: raw.currency || 'EUR',
     updatedAt: today,
   };
@@ -293,12 +294,14 @@ function stableId(accountId: string, t: RawTransaction, amount: number, label: s
   return `eb_${createHash('sha256').update(`${accountId}|${basis}`).digest('hex').slice(0, 24)}`;
 }
 
-/** Signed amount (debit negative), booking date, readable label, automatic category. */
+/** Signed amount in cents (debit negative), booking date, readable label, automatic category. */
 export function toTransaction(t: RawTransaction, accountId: string): BankTransaction | null {
-  const raw = Number(t.transaction_amount?.amount);
+  const raw = toCents(String(t.transaction_amount?.amount ?? ''));
   const date = t.booking_date || t.value_date || t.transaction_date;
-  if (!Number.isFinite(raw) || !date) return null;
-  const amount = Math.round((t.credit_debit_indicator === 'DBIT' ? -Math.abs(raw) : t.credit_debit_indicator === 'CRDT' ? Math.abs(raw) : raw) * 100) / 100;
+  if (raw === null || !date) return null;
+  const amountCents = t.credit_debit_indicator === 'DBIT' ? -Math.abs(raw) : t.credit_debit_indicator === 'CRDT' ? Math.abs(raw) : raw;
+  // Ids made before the switch to cents used the euro value: kept identical so nothing doubles.
+  const amount = amountCents / 100;
   const label =
     (t.remittance_information ?? []).join(' ').replace(/\s+/g, ' ').trim() ||
     (amount < 0 ? t.creditor?.name : t.debtor?.name) ||
@@ -308,7 +311,7 @@ export function toTransaction(t: RawTransaction, accountId: string): BankTransac
     accountId,
     date: date.slice(0, 10),
     label: label.slice(0, 140),
-    amount,
+    amountCents,
     category: classify(label, amount),
     pending: t.status === 'PDNG' || undefined,
   };

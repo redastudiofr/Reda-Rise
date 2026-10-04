@@ -6,10 +6,11 @@ import { useData } from '@/components/DataProvider';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import FlowChart from '@/components/finance/FlowChart';
 import { formatDate, formatShort, todayKey, uid } from '@/lib/logic';
-import { formatMoneyExact, monthKey, previousMonth } from '@/lib/business';
+import { monthKey, previousMonth } from '@/lib/business';
+import { formatCents, toCents } from '@/lib/money';
 import {
   SPEND_CATEGORIES,
-  accountsTotal,
+  accountsTotalCents,
   categoryColor,
   categoryLabel,
   mergeSync,
@@ -224,13 +225,13 @@ export default function BankPage() {
 
   function addAccount() {
     if (accountName.trim() === '') return;
-    const parsed = Number(accountBalance.replace(',', '.'));
+    const parsed = accountBalance.trim() === '' ? null : toCents(accountBalance);
     const account: BankAccount = {
       id: uid(),
       connectionId: '',
       name: accountName.trim(),
       kind: accountKind,
-      balance: Number.isFinite(parsed) && accountBalance.trim() !== '' ? parsed : undefined,
+      balanceCents: parsed ?? undefined,
       currency: 'EUR',
       updatedAt: today,
     };
@@ -307,12 +308,14 @@ export default function BankPage() {
     [txs, month],
   );
   const top = useMemo(() => topExpenses(txs, month, 5), [txs, month]);
+  // The savings target is typed in euros by the user; compared in cents.
   const target = data.monthlySavingsTarget;
-  const ratio = savingsRatio(mt.saved, target);
+  const targetCents = toCents(target) ?? 0;
+  const ratio = savingsRatio(mt.savedCents, targetCents);
   const monthTxs = txs.filter((t) => monthKey(t.date) === month).sort((a, b) => (a.date < b.date ? 1 : -1));
   const isCurrent = month === monthKey(today);
-  const totalBalance = accountsTotal(bank.accounts);
-  const catMax = Math.max(1, ...cats.map((c) => c.amount));
+  const totalBalance = accountsTotalCents(bank.accounts);
+  const catMax = Math.max(1, ...cats.map((c) => c.amountCents));
   const connectionOf = (id: string) => bank.connections.find((c) => c.id === id);
   const shownInstitutions = (institutions ?? []).filter((i) =>
     i.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').includes(
@@ -447,17 +450,17 @@ export default function BankPage() {
             <div className="card bk-story">
               <p>
                 {isCurrent ? 'Ce mois-ci' : `En ${monthLabel(month)}`}, tes dépenses sont de{' '}
-                <b className="mono">{formatMoneyExact(mt.spent)}</b>.
+                <b className="mono">{formatCents(mt.spentCents)}</b>.
               </p>
               <p>
-                {mt.saved >= 0 ? (
+                {mt.savedCents >= 0 ? (
                   <>
-                    Tu as économisé <b className="mono">{formatMoneyExact(mt.saved)}</b>
+                    Tu as économisé <b className="mono">{formatCents(mt.savedCents)}</b>
                     <small> (revenus − dépenses)</small>.
                   </>
                 ) : (
                   <>
-                    Tes dépenses dépassent tes revenus de <b className="mono">{formatMoneyExact(-mt.saved)}</b>.
+                    Tes dépenses dépassent tes revenus de <b className="mono">{formatCents(-mt.savedCents)}</b>.
                   </>
                 )}
               </p>
@@ -465,7 +468,7 @@ export default function BankPage() {
                 <>
                   <p>
                     Ton objectif d’épargne est à <b className="mono">{Math.round(ratio * 100)} %</b>
-                    <small> ({formatMoneyExact(Math.max(0, mt.saved))} sur {formatMoneyExact(target)})</small>.
+                    <small> ({formatCents(Math.max(0, mt.savedCents))} sur {formatCents(targetCents)})</small>.
                   </p>
                   <div className="bar bk-goal-bar" role="progressbar" aria-valuenow={Math.round(Math.min(1, ratio) * 100)} aria-valuemin={0} aria-valuemax={100}>
                     <i style={{ width: `${Math.min(1, ratio) * 100}%` }} />
@@ -497,26 +500,26 @@ export default function BankPage() {
             <div className="fin-kpis bk-kpis">
               <div>
                 <span>Dépenses du mois</span>
-                <b className="mono">{formatMoneyExact(mt.spent)}</b>
-                {prev.spent > 0 ? (
+                <b className="mono">{formatCents(mt.spentCents)}</b>
+                {prev.spentCents > 0 ? (
                   <small className="mono">
-                    {mt.spent >= prev.spent ? '+' : '−'}
-                    {formatMoneyExact(Math.abs(mt.spent - prev.spent))} vs mois préc.
+                    {mt.spentCents >= prev.spentCents ? '+' : '−'}
+                    {formatCents(Math.abs(mt.spentCents - prev.spentCents))} vs mois préc.
                   </small>
                 ) : null}
               </div>
               <div>
                 <span>Dépenses de la semaine</span>
-                <b className="mono">{formatMoneyExact(wk.spent)}</b>
+                <b className="mono">{formatCents(wk.spentCents)}</b>
                 <small className="mono">depuis le {formatShort(wk.from)}</small>
               </div>
               <div>
                 <span>Revenus du mois</span>
-                <b className="mono">{formatMoneyExact(mt.earned)}</b>
+                <b className="mono">{formatCents(mt.earnedCents)}</b>
               </div>
               <div>
                 <span>Vers l’épargne</span>
-                <b className="mono">{formatMoneyExact(mt.toSavings)}</b>
+                <b className="mono">{formatCents(mt.toSavingsCents)}</b>
                 <small>virements du mois</small>
               </div>
             </div>
@@ -544,10 +547,10 @@ export default function BankPage() {
                         <div className="row">
                           <span>{categoryLabel(c.category)}</span>
                           <span className="mono">
-                            <b>{formatMoneyExact(c.amount)}</b> · {Math.round(c.share * 100)} %
+                            <b>{formatCents(c.amountCents)}</b> · {Math.round(c.share * 100)} %
                           </span>
                         </div>
-                        <div className="fin-cat-bar"><i style={{ width: `${(c.amount / catMax) * 100}%` }} /></div>
+                        <div className="fin-cat-bar"><i style={{ width: `${(c.amountCents / catMax) * 100}%` }} /></div>
                       </div>
                     ))}
                   </div>
@@ -566,7 +569,7 @@ export default function BankPage() {
                           <b>{t.label}</b>
                           <small>{categoryLabel(t.category)} · {formatShort(t.date)}</small>
                         </span>
-                        <b className="mono">−{formatMoneyExact(-t.amount)}</b>
+                        <b className="mono">−{formatCents(-t.amountCents)}</b>
                       </button>
                     ))}
                   </div>
@@ -587,7 +590,7 @@ export default function BankPage() {
         {totalBalance !== null ? (
           <div className="patrimoine-total" style={{ marginBottom: 10 }}>
             <span>Solde total</span>
-            <b className="mono">{formatMoneyExact(totalBalance)}</b>
+            <b className="mono">{formatCents(totalBalance)}</b>
           </div>
         ) : null}
         {bank.accounts.length === 0 ? (
@@ -604,7 +607,7 @@ export default function BankPage() {
                       {ACCOUNT_KINDS.find((k) => k.id === a.kind)?.label}
                       {a.iban4 ? ` · ••${a.iban4}` : ''}
                       {conn ? ` · ${conn.institution}` : ' · import manuel'}
-                      {typeof a.balance === 'number' ? ` · ${formatMoneyExact(a.balance)}` : ''}
+                      {typeof a.balanceCents === 'number' ? ` · ${formatCents(a.balanceCents)}` : ''}
                     </div>
                   </div>
                   {conn ? null : (
@@ -690,9 +693,9 @@ export default function BankPage() {
                     {t.pending ? ' · en attente' : ''}
                   </span>
                 </span>
-                <b className="mono tx-amount" data-in={t.amount > 0}>
-                  {t.amount > 0 ? '+' : '−'}
-                  {formatMoneyExact(Math.abs(t.amount))}
+                <b className="mono tx-amount" data-in={t.amountCents > 0}>
+                  {t.amountCents > 0 ? '+' : '−'}
+                  {formatCents(Math.abs(t.amountCents))}
                 </b>
               </button>
             ))}
@@ -772,8 +775,8 @@ export default function BankPage() {
             <div className="sheet-grip" />
             <div className="sheet-title">{editing.label}</div>
             <div className="ex-meta" style={{ marginBottom: 14 }}>
-              {formatDate(editing.date)} · {editing.amount > 0 ? '+' : '−'}
-              {formatMoneyExact(Math.abs(editing.amount))}
+              {formatDate(editing.date)} · {editing.amountCents > 0 ? '+' : '−'}
+              {formatCents(Math.abs(editing.amountCents))}
             </div>
             <div className="field" style={{ marginTop: 0 }}>
               <span>Catégorie</span>

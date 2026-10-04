@@ -53,14 +53,14 @@ export async function fetchAllLinks(now = Date.now()): Promise<FetchResult> {
         : day(now - FIRST_DAYS * 86_400_000);
       try {
         for (const acc of link.accounts) {
-          const balance = pickBalance(await getBalances(acc.uid));
+          const balanceCents = pickBalance(await getBalances(acc.uid));
           accounts.push({
             id: acc.id,
             connectionId: link.id,
             name: acc.name,
             kind: acc.kind,
             iban4: acc.iban4,
-            balance,
+            balanceCents,
             currency: acc.currency,
             updatedAt: today,
           });

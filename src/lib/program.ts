@@ -10,6 +10,24 @@ import type {
   Settings,
 } from './types';
 import { DEFAULT_DISCIPLINE, normalizeDiscipline } from './logic';
+import { legacyToCents } from './money';
+import type { BankAccount, BankTransaction } from './types';
+
+/** Bank amounts used to be euro decimals (`balance`, `amount`): now integer cents. */
+function migrateAccount(a: BankAccount & { balance?: number }): BankAccount {
+  if (a.balanceCents !== undefined || a.balance === undefined) return a;
+  const { balance, ...rest } = a;
+  return { ...rest, balanceCents: legacyToCents(balance) };
+}
+
+function migrateTransaction(t: BankTransaction & { amount?: number }): BankTransaction[] {
+  if (Number.isInteger(t.amountCents)) return [t];
+  const cents = legacyToCents(t.amount);
+  if (cents === undefined) return [];
+  const { amount, ...rest } = t;
+  void amount;
+  return [{ ...rest, amountCents: cents }];
+}
 
 /** Milestone rewards everyone starts with. The user can add their own. */
 export const DEFAULT_REWARDS: Reward[] = [
@@ -155,8 +173,8 @@ export function normalizeData(raw: unknown): AppData {
     subscriptions: Array.isArray(d.subscriptions) ? d.subscriptions : [],
     bank: {
       connections: Array.isArray(d.bank?.connections) ? d.bank.connections : [],
-      accounts: Array.isArray(d.bank?.accounts) ? d.bank.accounts : [],
-      transactions: Array.isArray(d.bank?.transactions) ? d.bank.transactions : [],
+      accounts: Array.isArray(d.bank?.accounts) ? d.bank.accounts.map(migrateAccount) : [],
+      transactions: Array.isArray(d.bank?.transactions) ? d.bank.transactions.flatMap(migrateTransaction) : [],
       lastSyncAt: typeof d.bank?.lastSyncAt === 'string' ? d.bank.lastSyncAt : undefined,
     },
     agenda: {

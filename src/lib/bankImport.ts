@@ -214,7 +214,7 @@ export function parseTransactionsCsv(text: string, accountId: string): ImportRes
       accountId,
       date,
       label,
-      amount: Math.round(amount * 100) / 100,
+      amountCents: Math.round(amount * 100),
       category: classify(label, amount),
     });
   }
@@ -228,9 +228,9 @@ export function dedupeAgainst(
   existing: BankTransaction[],
 ): BankTransaction[] {
   const known = new Set(
-    existing.map((t) => `${t.accountId}|${t.date}|${t.label.toLowerCase()}|${t.amount}`),
+    existing.map((t) => `${t.accountId}|${t.date}|${t.label.toLowerCase()}|${t.amountCents}`),
   );
   return incoming.filter(
-    (t) => !known.has(`${t.accountId}|${t.date}|${t.label.toLowerCase()}|${t.amount}`),
+    (t) => !known.has(`${t.accountId}|${t.date}|${t.label.toLowerCase()}|${t.amountCents}`),
   );
 }
