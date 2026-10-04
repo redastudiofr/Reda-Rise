@@ -59,6 +59,3 @@ export async function verifyToken(token: string | undefined | null): Promise<boo
   return diff === 0;
 }
 
-export function cronSecret(): string {
-  return process.env.CRON_SECRET || 'vejhEjq1NCHLlcS1NOVTATLH';
-}

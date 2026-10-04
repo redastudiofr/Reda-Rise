@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 const CONSENT_DAYS = 90;
 
 function redirectUrl(req: Request): string {
-  const configured = (process.env.ENABLEBANKING_REDIRECT_URL ?? '').trim();
+  const configured = (process.env.ENABLE_BANKING_REDIRECT_URL ?? '').trim();
   if (configured) return configured;
   return `${new URL(req.url).origin}/api/bank/callback`;
 }

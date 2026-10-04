@@ -35,7 +35,7 @@ export const BANK_PROVIDERS: BankProviderInfo[] = [
   {
     id: 'enablebanking',
     label: 'Enable Banking',
-    envVars: ['ENABLEBANKING_APP_ID', 'ENABLEBANKING_PRIVATE_KEY'],
+    envVars: ['ENABLE_BANKING_APP_ID', 'ENABLE_BANKING_PRIVATE_KEY'],
     docs: 'https://enablebanking.com/docs/api/quick-start/',
     note: 'Agréé DSP2, banques européennes. Gratuit pour relier ses propres comptes (mode restreint).',
   },
@@ -423,4 +423,26 @@ export function mergeSync(bank: Bank, p: SyncPayload): Bank {
     transactions: [...byId.values()],
     lastSyncAt: p.connections.length > 0 ? p.syncedAt : bank.lastSyncAt,
   };
+}
+
+/**
+ * When the app saves its whole document, the server may hold a newer bank
+ * sync (the daily job ran while the app was open). The newer sync is kept:
+ * its balances and transactions are merged back in, for the connections the
+ * app still has — a bank disconnected in the app meanwhile is not revived.
+ * Categories corrected in the app are kept (mergeSync).
+ */
+export function reconcileBank(incoming: Bank, stored: Bank): Bank {
+  if (!stored.lastSyncAt || (incoming.lastSyncAt && incoming.lastSyncAt >= stored.lastSyncAt)) return incoming;
+  const kept = new Set(incoming.connections.map((c) => c.id));
+  if (kept.size === 0) return incoming;
+  const accounts = stored.accounts.filter((a) => kept.has(a.connectionId));
+  const accountIds = new Set(accounts.map((a) => a.id));
+  const storedConn = new Map(stored.connections.map((c) => [c.id, c]));
+  return mergeSync(incoming, {
+    connections: incoming.connections.map((c) => storedConn.get(c.id) ?? c),
+    accounts,
+    transactions: stored.transactions.filter((t) => accountIds.has(t.accountId)),
+    syncedAt: stored.lastSyncAt,
+  });
 }

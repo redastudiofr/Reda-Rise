@@ -358,7 +358,7 @@ export default function BankPage() {
               <b>Aucun fournisseur bancaire configuré.</b>
               <span>
                 La connexion s’active dès que les variables d’Enable Banking sont renseignées sur le serveur (
-                <code>ENABLEBANKING_APP_ID</code>, <code>ENABLEBANKING_PRIVATE_KEY</code>). En attendant, l’import CSV
+                <code>ENABLE_BANKING_APP_ID</code>, <code>ENABLE_BANKING_PRIVATE_KEY</code>). En attendant, l’import CSV
                 ci-dessous fonctionne.
               </span>
             </div>

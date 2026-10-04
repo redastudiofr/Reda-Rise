@@ -42,6 +42,8 @@ type MemoryStore = {
   board: Map<string, LeaderboardRow>;
   /** Encrypted bank links, by link id (memory fallback only). */
   bankLinks: Map<string, string>;
+  /** Failed login counters (memory fallback only). */
+  attempts: Map<string, { count: number; resetAt: number }>;
   pool: Pool | null;
   ready: Promise<void> | null;
 };
@@ -55,6 +57,7 @@ const mem: MemoryStore =
     sent: new Set(),
     board: new Map(),
     bankLinks: new Map(),
+    attempts: new Map(),
     pool: null,
     ready: null,
   });
@@ -107,6 +110,13 @@ async function ensureSchema(pool: Pool): Promise<void> {
         level integer not null default 1,
         streak integer not null default 0,
         updated_at timestamptz not null default now()
+      );
+    `);
+    await pool.query(`
+      create table if not exists login_attempts (
+        key text primary key,
+        count integer not null,
+        reset_at timestamptz not null
       );
     `);
     await pool.query(`
@@ -316,4 +326,50 @@ export async function deleteBankLink(id: string): Promise<void> {
   }
   await ensureSchema(pool);
   await pool.query('delete from bank_links where id = $1', [id]);
+}
+
+/* ---------- tentatives de connexion ---------- */
+
+/**
+ * Failed logins per key (a hashed IP, or "all"), in a fixed window. Kept in
+ * the database so the limit holds across serverless instances.
+ */
+export async function failedLogins(key: string): Promise<{ count: number; resetAt: number }> {
+  const pool = await getPool();
+  if (!pool) {
+    const a = (mem.attempts ??= new Map()).get(key);
+    return a && a.resetAt > Date.now() ? a : { count: 0, resetAt: 0 };
+  }
+  await ensureSchema(pool);
+  const r = await pool.query('select count, reset_at from login_attempts where key = $1 and reset_at > now()', [key]);
+  return r.rows[0] ? { count: Number(r.rows[0].count), resetAt: new Date(r.rows[0].reset_at).getTime() } : { count: 0, resetAt: 0 };
+}
+
+export async function recordFailedLogin(key: string, windowSec: number): Promise<void> {
+  const pool = await getPool();
+  if (!pool) {
+    const store = (mem.attempts ??= new Map());
+    const a = store.get(key);
+    if (a && a.resetAt > Date.now()) a.count++;
+    else store.set(key, { count: 1, resetAt: Date.now() + windowSec * 1000 });
+    return;
+  }
+  await ensureSchema(pool);
+  await pool.query(
+    `insert into login_attempts (key, count, reset_at) values ($1, 1, now() + make_interval(secs => $2))
+     on conflict (key) do update set
+       count = case when login_attempts.reset_at <= now() then 1 else login_attempts.count + 1 end,
+       reset_at = case when login_attempts.reset_at <= now() then excluded.reset_at else login_attempts.reset_at end`,
+    [key, windowSec],
+  );
+}
+
+export async function clearFailedLogins(key: string): Promise<void> {
+  const pool = await getPool();
+  if (!pool) {
+    mem.attempts?.delete(key);
+    return;
+  }
+  await ensureSchema(pool);
+  await pool.query('delete from login_attempts where key = $1 or reset_at < now()', [key]);
 }
