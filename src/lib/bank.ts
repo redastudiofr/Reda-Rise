@@ -7,6 +7,7 @@ import type {
   SpendCategory,
 } from './types';
 import { shiftKey, weekDatesFrom } from './logic';
+import type { TransferContext } from './transfers';
 
 /**
  * Bank layer.
@@ -121,10 +122,6 @@ export function categoryColor(id: SpendCategory): string {
  */
 const RULES: { category: SpendCategory; keywords: string[] }[] = [
   {
-    category: 'epargne',
-    keywords: ['livret a', 'livret jeune', 'ldds', 'epargne', 'pea', 'assurance vie', 'per '],
-  },
-  {
     category: 'abonnements',
     keywords: [
       'netflix', 'spotify', 'deezer', 'disney', 'prime video', 'canal+', 'canal plus',
@@ -193,8 +190,9 @@ const RULES: { category: SpendCategory; keywords: string[] }[] = [
 ];
 
 /**
- * Best-guess category for a transaction label. Savings transfers are caught
- * first, then the keyword rules; money coming in that matched nothing is
+ * Best-guess category for a transaction label, from the keyword rules. Never
+ * "Épargne": a transfer to savings is recognised by its other leg on a savings
+ * account (lib/transfers.ts), not by its wording. Money coming in that matched nothing is
  * income, money going out that matched nothing stays "autre" rather than
  * being filed under a guess.
  */
@@ -298,13 +296,14 @@ export type CategorySlice = {
 export function spendByCategory(
   transactions: BankTransaction[],
   range: Range,
+  ctx?: TransferContext,
 ): CategorySlice[] {
   const totals = new Map<SpendCategory, { cents: number; count: number }>();
   let total = 0;
 
   for (const t of transactions) {
     if (!inRange(t.date, range)) continue;
-    if (t.amountCents >= 0 || t.category === 'epargne') continue;
+    if (t.amountCents >= 0 || t.category === 'epargne' || ctx?.pairs.has(t.id)) continue;
     const row = totals.get(t.category) ?? { cents: 0, count: 0 };
     row.cents += -t.amountCents;
     row.count += 1;

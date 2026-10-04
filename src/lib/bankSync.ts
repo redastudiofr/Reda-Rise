@@ -64,9 +64,14 @@ export async function fetchAllLinks(now = Date.now()): Promise<FetchResult> {
             currency: acc.currency,
             updatedAt: today,
           });
+          // Same id twice = same fingerprint (no bank reference): numbered by rank.
+          const seen = new Map<string, number>();
           for (const raw of await getTransactions(acc.uid, since)) {
-            const t = toTransaction(raw, acc.id);
-            if (t) transactions.push(t);
+            const first = toTransaction(raw, acc.id);
+            if (!first) continue;
+            const rank = (seen.get(first.id) ?? 0) + 1;
+            seen.set(first.id, rank);
+            transactions.push(rank === 1 ? first : toTransaction(raw, acc.id, rank)!);
           }
         }
         link.lastSyncAt = new Date(now).toISOString();

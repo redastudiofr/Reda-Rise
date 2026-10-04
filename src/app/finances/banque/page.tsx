@@ -8,6 +8,7 @@ import FlowChart from '@/components/finance/FlowChart';
 import { formatDate, formatShort, todayKey, uid } from '@/lib/logic';
 import { monthKey, previousMonth } from '@/lib/business';
 import { formatCents, toCents } from '@/lib/money';
+import { transferContext } from '@/lib/transfers';
 import {
   SPEND_CATEGORIES,
   accountsTotalCents,
@@ -299,15 +300,17 @@ export default function BankPage() {
     () => (accountId ? bank.transactions.filter((t) => t.accountId === accountId) : bank.transactions),
     [bank.transactions, accountId],
   );
-  const mt = useMemo(() => monthTotals(txs, month), [txs, month]);
-  const prev = useMemo(() => monthTotals(txs, previousMonth(month)), [txs, month]);
-  const wk = useMemo(() => weekTotals(txs, today), [txs, today]);
-  const flows = useMemo(() => bankMonthlyFlows(txs, month, span), [txs, month, span]);
+  // Pairs are found across all accounts: the two legs of a transfer live on different ones.
+  const tctx = useMemo(() => transferContext(bank.transactions, bank.accounts), [bank.transactions, bank.accounts]);
+  const mt = useMemo(() => monthTotals(txs, month, tctx), [txs, month, tctx]);
+  const prev = useMemo(() => monthTotals(txs, previousMonth(month), tctx), [txs, month, tctx]);
+  const wk = useMemo(() => weekTotals(txs, today, tctx), [txs, today, tctx]);
+  const flows = useMemo(() => bankMonthlyFlows(txs, month, span, tctx), [txs, month, span, tctx]);
   const cats = useMemo(
-    () => spendByCategory(txs, { from: `${month}-01`, to: `${month}-31`, label: month }),
-    [txs, month],
+    () => spendByCategory(txs, { from: `${month}-01`, to: `${month}-31`, label: month }, tctx),
+    [txs, month, tctx],
   );
-  const top = useMemo(() => topExpenses(txs, month, 5), [txs, month]);
+  const top = useMemo(() => topExpenses(txs, month, 5, tctx), [txs, month, tctx]);
   // The savings target is typed in euros by the user; compared in cents.
   const target = data.monthlySavingsTarget;
   const targetCents = toCents(target) ?? 0;
@@ -520,7 +523,11 @@ export default function BankPage() {
               <div>
                 <span>Vers l’épargne</span>
                 <b className="mono">{formatCents(mt.toSavingsCents)}</b>
-                <small>virements du mois</small>
+                <small>
+                  {mt.transfers > 0
+                    ? `${mt.transfers} virement${mt.transfers > 1 ? 's' : ''} entre tes comptes, hors dépenses et revenus`
+                    : 'virements vers tes comptes épargne'}
+                </small>
               </div>
             </div>
 
@@ -691,6 +698,7 @@ export default function BankPage() {
                     <i className="tx-dot" style={{ background: categoryColor(t.category) }} />
                     {categoryLabel(t.category)} · {formatDate(t.date)}
                     {t.pending ? ' · en attente' : ''}
+                    {tctx.pairs.has(t.id) ? ' · virement interne' : ''}
                   </span>
                 </span>
                 <b className="mono tx-amount" data-in={t.amountCents > 0}>

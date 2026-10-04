@@ -289,13 +289,19 @@ export function toAccount(
   };
 }
 
-function stableId(accountId: string, t: RawTransaction, amount: number, label: string, date: string): string {
-  const basis = t.entry_reference || t.transaction_id || `${date}|${amount}|${label}`;
+/**
+ * The bank's own reference when it gives one. Otherwise a fingerprint of
+ * date + amount + label; identical operations the same day (two coffees)
+ * are told apart by their rank, so neither is lost nor counted twice.
+ */
+function stableId(accountId: string, t: RawTransaction, amount: number, label: string, date: string, occurrence: number): string {
+  const fingerprint = `${date}|${amount}|${label}${occurrence > 1 ? `|#${occurrence}` : ''}`;
+  const basis = t.entry_reference || t.transaction_id || fingerprint;
   return `eb_${createHash('sha256').update(`${accountId}|${basis}`).digest('hex').slice(0, 24)}`;
 }
 
 /** Signed amount in cents (debit negative), booking date, readable label, automatic category. */
-export function toTransaction(t: RawTransaction, accountId: string): BankTransaction | null {
+export function toTransaction(t: RawTransaction, accountId: string, occurrence = 1): BankTransaction | null {
   const raw = toCents(String(t.transaction_amount?.amount ?? ''));
   const date = t.booking_date || t.value_date || t.transaction_date;
   if (raw === null || !date) return null;
@@ -307,7 +313,7 @@ export function toTransaction(t: RawTransaction, accountId: string): BankTransac
     (amount < 0 ? t.creditor?.name : t.debtor?.name) ||
     'Opération';
   return {
-    id: stableId(accountId, t, amount, label, date),
+    id: stableId(accountId, t, amount, label, date, occurrence),
     accountId,
     date: date.slice(0, 10),
     label: label.slice(0, 140),

@@ -11,6 +11,7 @@ import type {
 } from './types';
 import { DEFAULT_DISCIPLINE, normalizeDiscipline } from './logic';
 import { legacyToCents } from './money';
+import { classify } from './bank';
 import type { BankAccount, BankTransaction } from './types';
 
 /** Bank amounts used to be euro decimals (`balance`, `amount`): now integer cents. */
@@ -21,12 +22,17 @@ function migrateAccount(a: BankAccount & { balance?: number }): BankAccount {
 }
 
 function migrateTransaction(t: BankTransaction & { amount?: number }): BankTransaction[] {
+  // "Épargne" used to be guessed from the wording; only the user's own choice is kept.
+  if (t.category === 'epargne' && !t.manualCategory && Number.isInteger(t.amountCents)) {
+    return [{ ...t, category: classify(t.label, t.amountCents) }];
+  }
   if (Number.isInteger(t.amountCents)) return [t];
   const cents = legacyToCents(t.amount);
   if (cents === undefined) return [];
   const { amount, ...rest } = t;
   void amount;
-  return [{ ...rest, amountCents: cents }];
+  const migrated = { ...rest, amountCents: cents };
+  return migrateTransaction(migrated);
 }
 
 /** Milestone rewards everyone starts with. The user can add their own. */
