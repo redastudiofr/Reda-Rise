@@ -352,6 +352,15 @@ export function accountsTotalCents(accounts: BankAccount[]): number | null {
   return known.reduce((a, x) => a + (x.balanceCents ?? 0), 0);
 }
 
+/**
+ * What the bank accounts add to the net worth on the Finances page: euro
+ * accounts whose balance is known (another currency is not converted).
+ */
+export function bankWorthCents(accounts: BankAccount[]): { cents: number; count: number } {
+  const known = accounts.filter((a) => typeof a.balanceCents === 'number' && (a.currency || 'EUR') === 'EUR');
+  return { cents: known.reduce((s, a) => s + (a.balanceCents ?? 0), 0), count: known.length };
+}
+
 export function transactionsOf(bank: Bank, accountId: string | null): BankTransaction[] {
   const rows = accountId
     ? bank.transactions.filter((t) => t.accountId === accountId)

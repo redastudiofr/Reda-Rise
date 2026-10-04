@@ -40,6 +40,8 @@ import {
   subsYearlyTotal,
   totalsByType,
 } from '@/lib/finance';
+import { bankWorthCents } from '@/lib/bank';
+import { formatCents } from '@/lib/money';
 import type { FinanceEntry, MoneyAccount, SavingsGoal, Subscription } from '@/lib/types';
 
 type Tab = 'apercu' | 'depenses' | 'abonnements' | 'epargne';
@@ -111,6 +113,10 @@ export default function FinancesPage() {
   const accounts = data.accounts.filter((a) => !a.archived);
   const available = availableTotal(data.accounts);
   const byType = totalsByType(data.accounts);
+  // Bank accounts (connected or imported) count in the net worth too.
+  const bankWorth = bankWorthCents(data.bank.accounts);
+  const worthCents = Math.round(available * 100) + bankWorth.cents;
+  const accountCount = accounts.length + bankWorth.count;
   const monthFlow = monthlyFlows(data.finances, month, 1)[0];
   const prevFlow = monthlyFlows(data.finances, previousMonth(month), 1)[0];
   const flows = useMemo(() => monthlyFlows(data.finances, month, span), [data.finances, month, span]);
@@ -326,14 +332,20 @@ export default function FinancesPage() {
           <div>
             <section className="fin-hero">
               <div className="fin-eyebrow">Patrimoine disponible</div>
-              <div className="fin-total mono">{formatMoneyExact(available)}</div>
+              <div className="fin-total mono">{formatCents(worthCents)}</div>
               <div className="fin-hero-sub">
-                {accounts.length === 0
-                  ? 'Ajoute tes comptes pour voir ton total.'
-                  : `${accounts.length} compte${accounts.length > 1 ? 's' : ''}`}
+                {accountCount === 0
+                  ? 'Ajoute tes comptes ou connecte ta banque pour voir ton total.'
+                  : `${accountCount} compte${accountCount > 1 ? 's' : ''}${bankWorth.count > 0 ? `, dont ${bankWorth.count} bancaire${bankWorth.count > 1 ? 's' : ''}` : ''}`}
               </div>
-              {byType.length > 0 ? (
+              {byType.length > 0 || bankWorth.count > 0 ? (
                 <div className="fin-split">
+                  {bankWorth.count > 0 ? (
+                    <Link href="/finances/banque" className="fin-split-bank" style={{ ['--c' as string]: 'var(--accent)' }}>
+                      <i />
+                      Comptes bancaires <b className="mono">{formatCents(bankWorth.cents)}</b>
+                    </Link>
+                  ) : null}
                   {byType.map((t) => {
                     const def = accountType(t.type);
                     return (
@@ -355,6 +367,7 @@ export default function FinancesPage() {
                     ? `${data.bank.connections.length} banque${data.bank.connections.length > 1 ? 's' : ''} connectée${data.bank.connections.length > 1 ? 's' : ''} · ${data.bank.transactions.length} opérations`
                     : 'Connecter une banque ou importer un relevé, puis analyser'}
                 </small>
+                {bankWorth.count > 0 ? <small>Solde total {formatCents(bankWorth.cents)} · voir l’analyse détaillée</small> : null}
               </span>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M9 5.5 15.5 12 9 18.5" />
@@ -368,8 +381,12 @@ export default function FinancesPage() {
               </div>
               {accounts.length === 0 ? (
                 <div className="card dash-empty">
-                  <b>Aucun compte.</b>
-                  <span>Compte bancaire, livret d’épargne, espèces… Les soldes se saisissent à la main.</span>
+                  <b>{bankWorth.count > 0 ? 'Aucun compte saisi à la main.' : 'Aucun compte.'}</b>
+                  <span>
+                    {bankWorth.count > 0
+                      ? 'Tes comptes bancaires sont déjà comptés ci-dessus. Ajoute ici ce qui n’est pas à la banque : espèces, autre établissement…'
+                      : 'Compte bancaire, livret d’épargne, espèces… Les soldes se saisissent à la main.'}
+                  </span>
                   <button className="btn btn-accent" style={{ marginTop: 10 }} onClick={() => setAccountSheet('new')}>
                     Ajouter un compte
                   </button>

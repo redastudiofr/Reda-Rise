@@ -4486,6 +4486,16 @@ a {
   background: var(--c);
 }
 
+.fin-split .fin-split-bank {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.2);
+  text-underline-offset: 3px;
+}
+
 .fin-split b {
   color: var(--text);
   font-weight: 620;
