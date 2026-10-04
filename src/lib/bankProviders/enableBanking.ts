@@ -172,6 +172,8 @@ export async function startAuthorization(opts: {
 
 export type RawAccount = {
   uid: string;
+  /** Same account, same hash, whatever the session: Enable Banking's stable identity. */
+  identification_hash?: string;
   name?: string;
   account_id?: { iban?: string; other?: { identification?: string } };
   currency?: string;

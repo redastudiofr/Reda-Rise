@@ -45,6 +45,7 @@ const COUNTRIES = [
 /** What the bank redirect reports, in plain words. Never shows a raw provider error. */
 const RETURN_MESSAGES: Record<string, string> = {
   connected: 'Banque connectée. Récupération des comptes…',
+  reconnected: 'Banque reconnectée : mêmes comptes, historique conservé. Récupération des nouvelles opérations…',
   state: 'Le retour de la banque n’a pas pu être vérifié (lien expiré ou ouvert dans un autre navigateur). Recommence la connexion.',
   refused: 'La connexion a été annulée ou refusée sur le site de la banque. Rien n’a été enregistré.',
   not_ready: 'La connexion bancaire n’est pas disponible sur ce déploiement.',
@@ -143,8 +144,8 @@ export default function BankPage() {
         const outcome = q.get('bank');
         if (outcome) {
           window.history.replaceState(null, '', window.location.pathname);
-          if (outcome === 'connected') {
-            setNotice({ tone: 'ok', text: RETURN_MESSAGES.connected });
+          if (outcome === 'connected' || outcome === 'reconnected') {
+            setNotice({ tone: 'ok', text: RETURN_MESSAGES[outcome] });
             void sync();
           } else {
             setNotice({ tone: 'warn', text: RETURN_MESSAGES[q.get('reason') ?? ''] ?? RETURN_MESSAGES.provider });
@@ -187,6 +188,24 @@ export default function BankPage() {
       window.location.assign(json.url);
     } catch (err) {
       setInstError(err instanceof Error ? err.message : 'La connexion n’a pas pu démarrer.');
+      setConnecting(null);
+    }
+  }
+
+  /** Renews an expired consent: same bank, same accounts, history kept. */
+  async function reconnect(c: BankConnection) {
+    setConnecting(c.id);
+    try {
+      const res = await fetch('/api/bank/connect', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ reconnect: c.id }),
+      });
+      const json = (await res.json()) as { url?: string; message?: string };
+      if (!res.ok || !json.url) throw new Error(json.message ?? 'La reconnexion n’a pas pu démarrer.');
+      window.location.assign(json.url);
+    } catch (err) {
+      setNotice({ tone: 'warn', text: err instanceof Error ? err.message : 'La reconnexion n’a pas pu démarrer.' });
       setConnecting(null);
     }
   }
@@ -404,9 +423,16 @@ export default function BankPage() {
                     </small>
                     {c.error ? <small className="bk-err">{c.error}</small> : null}
                   </div>
-                  <button className="btn btn-ghost btn-sm" onClick={() => setToDisconnect(c)}>
-                    Déconnecter
-                  </button>
+                  <div className="bk-link-actions">
+                    {c.status === 'needs_action' && ready ? (
+                      <button className="btn btn-accent btn-sm" onClick={() => reconnect(c)} disabled={connecting !== null}>
+                        {connecting === c.id ? 'Ouverture…' : 'Reconnecter'}
+                      </button>
+                    ) : null}
+                    <button className="btn btn-ghost btn-sm" onClick={() => setToDisconnect(c)}>
+                      Déconnecter
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

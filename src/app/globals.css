@@ -5146,6 +5146,7 @@ a {
 
 .bk-link {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
@@ -5159,9 +5160,15 @@ a {
 }
 
 .bk-link-main {
-  flex: 1;
+  flex: 1 1 160px;
   min-width: 0;
   display: grid;
+}
+
+.bk-link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .bk-link-main b {

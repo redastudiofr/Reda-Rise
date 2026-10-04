@@ -91,14 +91,20 @@ export function unseal<T>(sealed: string): T {
 export const STATE_COOKIE = 'telos_bank_state';
 export const STATE_TTL_SECONDS = 15 * 60;
 
-export type PendingAuth = { state: string; exp: number; institution: string; country: string };
+/** `reconnect`: id of the existing link this authorisation renews. */
+export type PendingAuth = { state: string; exp: number; institution: string; country: string; reconnect?: string };
 
-export function newPendingAuth(institution: string, country: string): { pending: PendingAuth; cookie: string } {
+export function newPendingAuth(
+  institution: string,
+  country: string,
+  reconnect?: string,
+): { pending: PendingAuth; cookie: string } {
   const pending: PendingAuth = {
     state: b64u(randomBytes(24)),
     exp: Date.now() + STATE_TTL_SECONDS * 1000,
     institution,
     country,
+    ...(reconnect ? { reconnect } : {}),
   };
   return { pending, cookie: seal(pending) };
 }

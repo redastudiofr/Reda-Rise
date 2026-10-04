@@ -17,7 +17,21 @@ export type BankLink = {
   validUntil?: string;
   createdAt: string;
   lastSyncAt?: string;
-  accounts: { id: string; uid: string; name: string; kind: BankAccountKind; iban4?: string; currency: string }[];
+  accounts: LinkAccount[];
+};
+
+/**
+ * `uid` changes with every session; `refs` (hashes of the provider's account
+ * identity and of the IBAN) do not, so a renewed consent finds its accounts.
+ */
+export type LinkAccount = {
+  id: string;
+  uid: string;
+  name: string;
+  kind: BankAccountKind;
+  iban4?: string;
+  currency: string;
+  refs?: string[];
 };
 
 export async function saveLink(link: BankLink): Promise<void> {
