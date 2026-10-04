@@ -1,0 +1,535 @@
+export type SetEntry = { weight: number; reps: number };
+export type LoggedExercise = { exerciseId: string; sets: SetEntry[] };
+export type LoggedWorkout = {
+  id: string;
+  date: string;
+  sessionId: string;
+  exercises: LoggedExercise[];
+};
+
+/* ---------- objectifs ---------- */
+
+export type Category =
+  | 'sport'
+  | 'entrepreneuriat'
+  | 'travail'
+  | 'etudes'
+  | 'discipline'
+  | 'habitudes'
+  | 'personnel'
+  | 'autre';
+
+export type Difficulty = 'facile' | 'moyen' | 'difficile' | 'epique';
+
+/** How often an objective comes back on the day list. */
+export type Recurrence = 'once' | 'daily' | 'weekdays';
+
+export type Objective = {
+  id: string;
+  title: string;
+  category: Category;
+  difficulty: Difficulty;
+  xp: number;
+  time?: string; // HH:MM
+  recurrence: Recurrence;
+  days?: number[]; // recurrence === 'weekdays'
+  date?: string; // recurrence === 'once'
+  createdAt: string;
+  archived?: boolean;
+  /** Set the day the user gave up on a one-off quest — kept, not deleted. */
+  abandonedAt?: string;
+  /** The quest only counts once a photo has been attached. */
+  requiresProof?: boolean;
+  /** Set when the objective came out of the random generator, to avoid repeats. */
+  generated?: boolean;
+};
+
+/* ---------- agenda (calendrier) ---------- */
+
+export type EventKind = 'rdv' | 'cours' | 'reunion' | 'evenement' | 'anniversaire';
+
+/** How an event comes back. Dates stay local to the user's time zone. */
+export type Repeat = 'none' | 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'yearly';
+
+export type CalEvent = {
+  id: string;
+  kind: EventKind;
+  title: string;
+  /** First occurrence, YYYY-MM-DD. */
+  date: string;
+  /** HH:MM; absent for an all-day event. */
+  time?: string;
+  /** Minutes. Ignored for an all-day event. */
+  duration: number;
+  description?: string;
+  repeat: Repeat;
+  /** Last day a repeating event may occur, inclusive. */
+  until?: string;
+  /** Occurrences removed one by one from a repeating event. */
+  exceptions?: string[];
+  /** Minutes before the start; an all-day item counts from 09:00. */
+  reminders: number[];
+  createdAt: string;
+};
+
+export type TaskPriority = 'basse' | 'normale' | 'haute' | 'urgente';
+export type TaskStatus = 'a-faire' | 'en-cours' | 'termine';
+
+export type CalTask = {
+  id: string;
+  title: string;
+  /** Unscheduled when absent — it then lives in its project or the inbox. */
+  date?: string;
+  time?: string;
+  /** Minutes, for tasks with a time. */
+  duration?: number;
+  priority: TaskPriority;
+  status: TaskStatus;
+  category: Category;
+  reminders: number[];
+  projectId?: string;
+  notes?: string;
+  createdAt: string;
+  doneAt?: string;
+};
+
+/** A plan made of tasks, e.g. "Lancement Reda Studio". Separate from Business projects. */
+export type AgendaProject = {
+  id: string;
+  title: string;
+  color: string;
+  description?: string;
+  deadline?: string;
+  createdAt: string;
+  archived?: boolean;
+  /** Company this project belongs to (Business), if any. */
+  companyId?: string;
+};
+
+export type Agenda = {
+  events: CalEvent[];
+  tasks: CalTask[];
+  projects: AgendaProject[];
+};
+
+/**
+ * Photo attached to prove an objective was done. Stored per day so a recurring
+ * objective can be proven again tomorrow without overwriting yesterday.
+ */
+export type ObjectiveProof = {
+  objectiveId: string;
+  /** Day key the proof belongs to. */
+  date: string;
+  /** Small JPEG data URL, resized on the device before it is stored. */
+  photo: string;
+  /** When the photo was attached, ISO — shown next to the proof. */
+  takenAt: string;
+};
+
+/** Key used in AppData.proofs: one photo per objective and per day. */
+export function proofKey(date: string, objectiveId: string): string {
+  return `${date}|${objectiveId}`;
+}
+
+/** One item of the Discipline checklist, chosen by the user. */
+export type DisciplineTask = {
+  id: string;
+  label: string;
+  hint?: string;
+  /** 1 to 20. */
+  xp: number;
+};
+
+/** A day: checklist ticks, objectives completed, and whether it was closed. */
+export type DailyEntry = {
+  tasks: Record<string, boolean>;
+  /**
+   * The checklist as it was that day (items and XP), saved when a box is
+   * ticked. Editing the list later never changes the XP of past days.
+   * Absent on days from before the list was customisable.
+   */
+  checklist?: DisciplineTask[];
+  objectives?: string[];
+  note?: string;
+  closed?: boolean;
+};
+
+export type Measurement = {
+  id: string;
+  date: string;
+  weightKg?: number;
+  armCm?: number;
+  chestCm?: number;
+  waistCm?: number;
+  thighCm?: number;
+};
+
+export type Reward = {
+  id: string;
+  level: number;
+  label: string;
+  custom: boolean;
+};
+
+export type Profile = {
+  name: string;
+  pseudo: string;
+  email: string;
+  /** Small square data URL, resized before storage. */
+  avatar: string;
+  age: number;
+  heightCm: number;
+  weightKg: number;
+  goal: string;
+};
+
+/* ---------- entrepreneuriat ---------- */
+
+export type ProjectStage = 'idee' | 'construction' | 'lancement' | 'croissance' | 'expansion';
+
+export type SubGoal = { id: string; label: string; done: boolean };
+
+export type FinanceEntry = {
+  id: string;
+  date: string;
+  kind: 'revenu' | 'depense';
+  category: string;
+  label?: string;
+  amount: number;
+  /** Personal finances only: the account it moved money on (its balance follows). */
+  accountId?: string;
+};
+
+/** A measurable company goal. CA and profit are computed from the entries. */
+export type CompanyGoal = {
+  id: string;
+  label: string;
+  metric: 'ca' | 'benefice' | 'custom';
+  period: 'mois' | 'annee';
+  target: number;
+  /** For a custom goal, the figure the user updates by hand. */
+  current?: number;
+  createdAt: string;
+};
+
+/**
+ * A company (historically called "project" — the stored data keeps that
+ * name so nothing is lost). Revenue and expenses live in `entries`.
+ */
+export type Project = {
+  id: string;
+  name: string;
+  type: string;
+  description?: string;
+  mainGoal?: string;
+  subGoals: SubGoal[];
+  createdAt: string;
+  deadline?: string;
+  stage: ProjectStage;
+  archived?: boolean;
+  entries: FinanceEntry[];
+  color?: string;
+  /** Cash in the bank on `cashStartDate`; the treasury follows the entries from there. */
+  cashStart?: number;
+  cashStartDate?: string;
+  goals?: CompanyGoal[];
+};
+
+/** Amount can be negative to represent a withdrawal. */
+export type SavingsEntry = { id: string; date: string; amount: number };
+
+export type Savings = {
+  target: number;
+  entries: SavingsEntry[];
+};
+
+/* ---------- portefeuille d'investissement ---------- */
+
+export type AssetType = 'action' | 'etf' | 'crypto' | 'immobilier' | 'obligation' | 'autre';
+
+/**
+ * One position in the portfolio. Everything is entered by hand: no price is
+ * fetched unless a market-data provider is configured, and none is invented.
+ */
+export type Holding = {
+  id: string;
+  name: string;
+  type: AssetType;
+  /** Ticker or pair, only useful once a quote provider is configured. */
+  symbol?: string;
+  quantity: number;
+  /** Price paid per unit. For a property, quantity 1 and the whole price. */
+  buyPrice: number;
+  /** Left empty until the user (or a provider) sets it; falls back to buyPrice. */
+  currentPrice?: number;
+  priceUpdatedAt?: string;
+  /** Fees and charges, counted in the invested capital. */
+  fees?: number;
+  date: string;
+  note?: string;
+};
+
+/** A running tracked amount, add or withdraw — plus the detailed positions. */
+export type Investments = {
+  entries: SavingsEntry[];
+  holdings: Holding[];
+};
+
+/* ---------- comptes bancaires ---------- */
+
+/** Aggregators the app is wired for. Which one is live depends on the env vars. */
+export type BankProviderId = 'enablebanking' | 'powens' | 'bridge' | 'gocardless' | 'tink' | 'plaid';
+
+/**
+ * A link to one bank, established through an aggregator. Only the opaque ids
+ * the aggregator hands back are stored — never a login, never a password.
+ */
+export type BankConnection = {
+  id: string;
+  provider: BankProviderId;
+  institution: string;
+  externalId: string;
+  status: 'active' | 'needs_action' | 'revoked';
+  connectedAt: string;
+  lastSyncAt?: string;
+  error?: string;
+  /** Day the bank consent ends (PSD2: renewed at least every 180 days). */
+  validUntil?: string;
+};
+
+export type BankAccountKind = 'courant' | 'epargne' | 'carte' | 'titres' | 'autre';
+
+export type BankAccount = {
+  id: string;
+  connectionId: string;
+  name: string;
+  kind: BankAccountKind;
+  /** Last four characters of the IBAN, enough to tell two accounts apart. */
+  iban4?: string;
+  /** Absent when the aggregator does not expose it. */
+  balance?: number;
+  currency: string;
+  updatedAt?: string;
+};
+
+export type SpendCategory =
+  | 'alimentation'
+  | 'logement'
+  | 'transport'
+  | 'shopping'
+  | 'abonnements'
+  | 'loisirs'
+  | 'sante'
+  | 'revenus'
+  | 'epargne'
+  | 'autre';
+
+export type BankTransaction = {
+  id: string;
+  accountId: string;
+  date: string;
+  label: string;
+  /** Negative for an expense, positive for money coming in. */
+  amount: number;
+  category: SpendCategory;
+  /** True once the user has corrected the automatic classification. */
+  manualCategory?: boolean;
+  /** Pending at the bank, not yet booked. */
+  pending?: boolean;
+};
+
+export type Bank = {
+  connections: BankConnection[];
+  accounts: BankAccount[];
+  transactions: BankTransaction[];
+  lastSyncAt?: string;
+};
+
+/* ---------- identité de joueur ---------- */
+
+/**
+ * Identity used for the shared leaderboard. Nothing leaves the device until
+ * the user turns sharing on.
+ */
+export type Player = {
+  id: string;
+  shareToLeaderboard: boolean;
+};
+
+/** A recurring monthly charge — Netflix, salle de sport, forfait téléphone… */
+export type SubFrequency = 'hebdomadaire' | 'mensuel' | 'trimestriel' | 'annuel';
+
+/** How often the user actually uses a subscription — one input of its analysis. */
+export type SubUsage = 'quotidienne' | 'hebdomadaire' | 'mensuelle' | 'rare' | 'jamais';
+
+export type SubImportance = 'essentiel' | 'utile' | 'accessoire';
+
+export type Subscription = {
+  id: string;
+  name: string;
+  /**
+   * Monthly equivalent, always. Kept so every screen can add subscriptions up
+   * without knowing about frequencies; `price` + `frequency` are the source.
+   */
+  amount: number;
+  /** Price charged each period. Absent on older entries: then `amount` monthly. */
+  price?: number;
+  frequency?: SubFrequency;
+  category?: string;
+  /** Day of the month the payment is taken, 1–31. */
+  dayOfMonth?: number;
+  /** A charge date, YYYY-MM-DD, from which the next ones follow the frequency. */
+  billingDate?: string;
+  accountId?: string;
+  usage?: SubUsage;
+  importance?: SubImportance;
+  /** A cheaper or free alternative the user knows of. */
+  alternative?: string;
+  /** The user's own call — the app only ever suggests. */
+  decision?: 'conserver' | 'resilier';
+  createdAt: string;
+};
+
+/* ---------- comptes et objectifs d'épargne (finances personnelles) ---------- */
+
+export type AccountType = 'courant' | 'epargne' | 'especes' | 'autre';
+
+/** A balance kept by hand — no bank connection involved. */
+export type MoneyAccount = {
+  id: string;
+  name: string;
+  type: AccountType;
+  bank?: string;
+  balance: number;
+  createdAt: string;
+  updatedAt: string;
+  archived?: boolean;
+};
+
+export type SavingsGoal = {
+  id: string;
+  label: string;
+  target: number;
+  /** What is already set aside for it. */
+  current: number;
+  deadline?: string;
+  color: string;
+  createdAt: string;
+  /** Set once, the first day `current` reached `target`. */
+  achievedAt?: string;
+};
+
+export type FinancialGoal = {
+  id: string;
+  label: string;
+  target: number;
+  xp: number;
+  createdAt: string;
+  /** Set once, the day the target was first reached — grants XP exactly once. */
+  achievedAt?: string;
+};
+
+export type NotificationSettings = {
+  creatine: { enabled: boolean; time: string };
+  hydration: { enabled: boolean; start: string; end: string; everyHours: number };
+  meals: { enabled: boolean; times: string[] };
+  sleep: { enabled: boolean; time: string };
+  objectives: { enabled: boolean; time: string };
+  /** Evening checks that only fire while some of today's objectives are still open. */
+  dayCheck: { enabled: boolean; times: string[] };
+  review: { enabled: boolean; time: string };
+};
+
+export type Settings = {
+  profile: Profile;
+  timezone: string;
+  notifications: NotificationSettings;
+  /** The user's own Discipline checklist: 1 to 15 items. */
+  discipline: DisciplineTask[];
+  /** Unlockables the user chose to wear (ids from lib/unlocks.ts). */
+  cosmetics: Cosmetics;
+};
+
+export type Cosmetics = { theme?: string; frame?: string; title?: string };
+
+/* ---------- vêtements ---------- */
+
+/** A piece of the clothing range, orderable through its shop link. */
+export type ClothingItem = {
+  id: string;
+  name: string;
+  description?: string;
+  /** Euros. */
+  price: number;
+  /** Small data URL resized in the browser, or the shop's https image. */
+  photo?: string;
+  sizes: string[];
+  /** Its page on redastudio.fr, where the order is placed. */
+  orderUrl?: string;
+  /** Product id on the shop, for pieces imported from redastudio.fr. */
+  shopId?: string;
+  /** XP earned the first time this piece is ordered (1 to 200). */
+  xp: number;
+  /** Exclusive piece: orderable from this level on. */
+  minLevel?: number;
+  createdAt: string;
+  archived?: boolean;
+};
+
+export type ClothingOrder = {
+  id: string;
+  itemId: string;
+  /** Copies, so the history stays right if the piece changes or is deleted. */
+  name: string;
+  price: number;
+  size?: string;
+  /**
+   * The piece's XP when ordered. Only the earliest order of a piece counts
+   * (lib/wardrobe.ts ordersWithXp): removing it moves the XP to the next one.
+   */
+  xp: number;
+  /** YYYY-MM-DD, local. */
+  date: string;
+  createdAt: string;
+};
+
+export type Wardrobe = { items: ClothingItem[]; orders: ClothingOrder[] };
+
+export type AppData = {
+  version: number;
+  updatedAt: number;
+  settings: Settings;
+  daily: Record<string, DailyEntry>;
+  workouts: LoggedWorkout[];
+  measurements: Measurement[];
+  objectives: Objective[];
+  rewards: Reward[];
+  projects: Project[];
+  /** Personal ledger, outside any project. */
+  finances: FinanceEntry[];
+  savings: Savings;
+  investments: Investments;
+  financialGoals: FinancialGoal[];
+  /** Personal accounts with hand-kept balances. */
+  accounts: MoneyAccount[];
+  /** Personal savings goals, each with its own progress. */
+  savingsGoals: SavingsGoal[];
+  /** How much the user wants to save each month (0 = not set). */
+  monthlySavingsTarget: number;
+  /** Recurring monthly charges, kept apart from the one-off ledger. */
+  subscriptions: Subscription[];
+  /** Bank links, accounts and transactions pulled from an aggregator. */
+  bank: Bank;
+  /** Calendar events, tasks and task projects. */
+  agenda: Agenda;
+  /** Photo proofs, keyed by `proofKey(date, objectiveId)`. */
+  proofs: Record<string, ObjectiveProof>;
+  player: Player;
+  /** Clothing range and the user's orders. */
+  wardrobe: Wardrobe;
+};
+
+export type PushSub = {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+};
