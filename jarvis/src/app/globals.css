@@ -14,6 +14,10 @@
   --font-mono: var(--font-sharetech), ui-monospace, monospace;
 }
 
+html {
+  color-scheme: dark;
+}
+
 html,
 body {
   background: var(--color-hud-bg);
