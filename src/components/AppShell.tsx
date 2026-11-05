@@ -39,7 +39,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   useServiceWorker();
 
-  if (pathname === '/login' || pathname === '/offline') return <>{children}</>;
+  // Jarvis has its own screen and data: no Reda Rise shell around it.
+  if (pathname === '/login' || pathname === '/offline' || pathname?.startsWith('/jarvis')) return <>{children}</>;
 
 
   return (

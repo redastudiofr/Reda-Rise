@@ -9,6 +9,11 @@ front, routes API et planification des rappels.
 
 Six onglets, pensés pour le pouce sur mobile, dont le profil.
 
+- **Jarvis** (`/jarvis`, bouton en haut de l'accueil) — assistant vocal :
+  débrief du matin (mails, ventes Shopify, météo, actualité, agenda), commandes
+  vocales et planning créé dans Google Agenda après confirmation. Ouverture
+  automatique au démarrage du Mac avec animation et son. Guide complet :
+  [docs/JARVIS.md](docs/JARVIS.md).
 - **Aujourd'hui** — objectifs du jour personnalisables (heure, catégorie,
   validation, filtres), progression de la journée, niveau, jours d'affilée,
   checklist Discipline personnalisable (1 à 15 objectifs, 1 à 20 XP chacun ;

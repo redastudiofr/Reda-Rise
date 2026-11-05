@@ -15,12 +15,12 @@ export async function middleware(req: NextRequest) {
   }
   const url = req.nextUrl.clone();
   url.pathname = '/login';
-  url.search = '';
+  url.search = pathname.startsWith('/jarvis') ? `?next=${encodeURIComponent(pathname + req.nextUrl.search)}` : '';
   return NextResponse.redirect(url);
 }
 
 export const config = {
   matcher: [
-    '/((?!login|offline|api/auth|api/cron|_next/static|_next/image|icons|manifest.webmanifest|sw.js|favicon.ico).*)',
+    '/((?!login|offline|jarvis/boot|api/auth|api/cron|_next/static|_next/image|icons|manifest.webmanifest|sw.js|favicon.ico).*)',
   ],
 };

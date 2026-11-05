@@ -429,8 +429,18 @@ export default function TodayPage() {
           <h1>{greeting}</h1>
           <p className="sub dash-date">{dateLabel}</p>
         </div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="brand-mark" src="/icons/icon-192.png" alt="" width={34} height={34} />
+        <div className="topbar-actions">
+          {/* A full page load: Jarvis brings its own screen and styles. */}
+          <a href="/jarvis" className="jarvis-link" aria-label="Ouvrir Jarvis, l’assistant vocal">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+              <circle cx="12" cy="12" r="8.5" strokeDasharray="4 2.2" />
+              <circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none" />
+            </svg>
+            Jarvis
+          </a>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="brand-mark" src="/icons/icon-192.png" alt="" width={34} height={34} />
+        </div>
       </header>
 
       <div className="dash-grid">

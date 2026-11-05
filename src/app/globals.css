@@ -105,6 +105,32 @@ a {
   letter-spacing: -0.022em;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.jarvis-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 229, 255, 0.45);
+  color: #7ff3ff;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  background: rgba(0, 229, 255, 0.06);
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.12);
+}
+
+.jarvis-link:active {
+  transform: scale(0.97);
+}
+
 .topbar .sub {
   margin: 2px 0 0;
   font-size: 13px;
