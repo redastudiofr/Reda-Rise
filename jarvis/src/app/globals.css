@@ -1,0 +1,124 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-hud-bg: #03080d;
+  --color-hud-panel: rgba(8, 24, 34, 0.72);
+  --color-hud-line: rgba(0, 229, 255, 0.22);
+  --color-cyan: #00e5ff;
+  --color-cyan-soft: #7ff3ff;
+  --color-amber: #ffb547;
+  --color-alert: #ff5470;
+  --color-ok: #3dffa8;
+  --font-display: var(--font-orbitron), ui-sans-serif, system-ui;
+  --font-sans: var(--font-chakra), ui-sans-serif, system-ui;
+  --font-mono: var(--font-sharetech), ui-monospace, monospace;
+}
+
+html,
+body {
+  background: var(--color-hud-bg);
+  color: #d8f6ff;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background:
+    radial-gradient(circle at 50% 38%, rgba(0, 229, 255, 0.09), transparent 55%),
+    linear-gradient(rgba(0, 229, 255, 0.035) 1px, transparent 1px) 0 0 / 100% 32px,
+    linear-gradient(90deg, rgba(0, 229, 255, 0.035) 1px, transparent 1px) 0 0 / 32px 100%,
+    var(--color-hud-bg);
+}
+
+::selection {
+  background: rgba(0, 229, 255, 0.35);
+}
+
+.hud-panel {
+  background: var(--color-hud-panel);
+  border: 1px solid var(--color-hud-line);
+  border-radius: 14px;
+  backdrop-filter: blur(6px);
+  box-shadow: inset 0 0 24px rgba(0, 229, 255, 0.05);
+}
+
+.hud-label {
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(127, 243, 255, 0.7);
+}
+
+.hud-btn {
+  border: 1px solid rgba(0, 229, 255, 0.5);
+  color: var(--color-cyan-soft);
+  border-radius: 999px;
+  padding: 0.55rem 1.1rem;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.hud-btn:hover:not(:disabled) {
+  background: rgba(0, 229, 255, 0.12);
+  box-shadow: 0 0 18px rgba(0, 229, 255, 0.25);
+}
+.hud-btn:disabled {
+  opacity: 0.4;
+}
+.hud-btn-alert {
+  border-color: rgba(255, 181, 71, 0.8);
+  color: var(--color-amber);
+  box-shadow: 0 0 22px rgba(255, 181, 71, 0.25);
+}
+
+.hud-input {
+  background: rgba(0, 20, 28, 0.8);
+  border: 1px solid var(--color-hud-line);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  color: #e6fbff;
+  outline: none;
+}
+.hud-input:focus {
+  border-color: rgba(0, 229, 255, 0.7);
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.12);
+}
+
+@keyframes hud-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes hud-spin-rev {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+.spin-slow {
+  animation: hud-spin 28s linear infinite;
+  transform-origin: center;
+}
+.spin-rev {
+  animation: hud-spin-rev 18s linear infinite;
+  transform-origin: center;
+}
+.spin-fast {
+  animation: hud-spin 7s linear infinite;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin-slow,
+  .spin-rev,
+  .spin-fast {
+    animation: none;
+  }
+}
+
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 229, 255, 0.3) transparent;
+}
