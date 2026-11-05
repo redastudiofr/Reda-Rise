@@ -9,6 +9,11 @@ front, routes API et planification des rappels.
 
 Six onglets, pensés pour le pouce sur mobile, dont le profil.
 
+- **Jarvis** (`/jarvis`, bouton en haut de l'accueil) — assistant vocal :
+  débrief du matin (mails, ventes Shopify, météo, actualité, agenda), commandes
+  vocales et planning créé dans Google Agenda après confirmation. Ouverture
+  automatique au démarrage du Mac avec animation et son. Guide complet :
+  [docs/JARVIS.md](docs/JARVIS.md).
 - **Aujourd'hui** — objectifs du jour personnalisables (heure, catégorie,
   validation, filtres), progression de la journée, niveau, jours d'affilée,
   checklist Discipline personnalisable (1 à 15 objectifs, 1 à 20 XP chacun ;
@@ -83,22 +88,20 @@ sur Vercel (Project → Settings → Environment Variables).
 | --- | --- |
 | `APP_PASSWORD` | Mot de passe d’accès. **Non défini = app ouverte, sans login** |
 | `AUTH_SECRET` | Secret HMAC signant le cookie de session |
-| `CRON_SECRET` | Secret exigé par `/api/cron/notify` |
+| `CRON_SECRET` | Secret exigé par les tâches planifiées (`/api/cron/notify`, `/api/cron/bank-sync`), envoyé en `Authorization: Bearer`. **Non défini = toutes les tâches planifiées refusées** |
+| `ENABLE_BANKING_APP_ID` / `ENABLE_BANKING_PRIVATE_KEY` | Application Enable Banking : identifiant et contenu complet du fichier `.pem` (pas un chemin de fichier) |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Paire de clés Web Push |
 | `VAPID_SUBJECT` | `mailto:` de contact exigé par le protocole VAPID |
 | `POSTGRES_URL` | Chaîne de connexion Postgres (ajoutée automatiquement par l'intégration) |
 
-Toutes, sauf `APP_PASSWORD`, ont une valeur de repli codée dans le projet pour
-qu'un premier déploiement fonctionne immédiatement. Ces valeurs par défaut sont
-visibles dans le dépôt : remplace-les si l'app doit rester privée.
+`CRON_SECRET` n'a aucune valeur par défaut. `AUTH_SECRET` et les clés VAPID en
+ont une, publique dans le dépôt : définis les tiens sur Vercel. L'écran de
+connexion bloque une connexion après 5 mots de passe faux en 15 minutes (30 par
+heure toutes connexions confondues).
 
-Valeurs générées pour ce projet, à coller dans **Environment Variables** sur
-Vercel (une ligne = une variable) :
+Clés VAPID générées pour ce projet :
 
 ```
-# APP_PASSWORD=  (laisser vide ou absent pour une app sans mot de passe)
-AUTH_SECRET=aTNau--fShcJ1whzRdM_IUJpZPQvTvUojY6nxhkATlk
-CRON_SECRET=vejhEjq1NCHLlcS1NOVTATLH
 VAPID_PUBLIC_KEY=BCXIXGZJ9R2h0-ici0R5MkNYi729igaLVqKWaZoWXiK6I4TR8gUpw3J8MdFfxD05-XHx22MbUJZdWyUNesMWvik
 VAPID_PRIVATE_KEY=exgvMVSdv8nSnnsDI5HL-3QOdUL5K9j-Ei-NFXArd8A
 VAPID_SUBJECT=mailto:obsyde.fr@gmail.com
@@ -277,6 +280,10 @@ public/
   soldes et les opérations.
 - Le retour de la banque est vérifié par un `state` aléatoire lié à un cookie
   httpOnly scellé, à usage unique, valable 15 minutes.
+- Synchronisation quotidienne : `/api/cron/bank-sync` (Vercel Cron, `0 5 * * *`
+  UTC, une fois par jour sur l'offre Hobby, dans l'heure). Elle fusionne soldes et
+  opérations côté serveur ; une app restée ouverte ne peut plus écraser cette
+  synchro en enregistrant une copie plus ancienne.
 - Refus de se connecter tant que l'app n'est pas protégée (`APP_PASSWORD`) et
   qu'`AUTH_SECRET` n'est pas un secret propre. Réponses `no-store`.
 - Déconnexion : l'autorisation est retirée chez le fournisseur et le lien

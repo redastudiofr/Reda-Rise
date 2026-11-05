@@ -3,25 +3,18 @@ import { alreadySent, markSent, readData } from '@/lib/db';
 import { dueNotifications, localNow, objectiveReminders } from '@/lib/schedule';
 import { sendToAll } from '@/lib/push';
 import { agendaReminders } from '@/lib/agenda';
-import { cronSecret } from '@/lib/auth';
+import { cronAuthorized } from '@/lib/cronAuth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * Called on a schedule (Vercel Cron, or any external scheduler hitting
- * /api/cron/notify?secret=…). Sends every reminder that is due, once.
+ * Called on a schedule (Vercel Cron, or the GitHub workflow every 15 min)
+ * with `Authorization: Bearer <CRON_SECRET>`. Sends every reminder that is
+ * due, once. Without CRON_SECRET on the server, every call is refused.
  */
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const auth = req.headers.get('authorization') || '';
-  const secret = cronSecret();
-  const authorized =
-    auth === `Bearer ${secret}` ||
-    url.searchParams.get('secret') === secret ||
-    req.headers.has('x-vercel-cron');
-
-  if (!authorized) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  if (!cronAuthorized(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   try {
     const data = await readData();

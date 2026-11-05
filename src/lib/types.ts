@@ -306,8 +306,8 @@ export type BankAccount = {
   kind: BankAccountKind;
   /** Last four characters of the IBAN, enough to tell two accounts apart. */
   iban4?: string;
-  /** Absent when the aggregator does not expose it. */
-  balance?: number;
+  /** Integer cents. Absent when the aggregator does not expose it. */
+  balanceCents?: number;
   currency: string;
   updatedAt?: string;
 };
@@ -329,8 +329,8 @@ export type BankTransaction = {
   accountId: string;
   date: string;
   label: string;
-  /** Negative for an expense, positive for money coming in. */
-  amount: number;
+  /** Integer cents: negative for an expense, positive for money coming in. */
+  amountCents: number;
   category: SpendCategory;
   /** True once the user has corrected the automatic classification. */
   manualCategory?: boolean;

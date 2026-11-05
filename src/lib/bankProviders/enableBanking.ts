@@ -1,5 +1,6 @@
 import { createHash, createPrivateKey, createSign } from 'crypto';
 import { classify } from '../bank';
+import { toCents } from '../money';
 import type { BankAccount, BankAccountKind, BankTransaction } from '../types';
 
 /**
@@ -12,7 +13,7 @@ import type { BankAccount, BankAccountKind, BankTransaction } from '../types';
  * server. Docs: https://enablebanking.com/docs/api/reference/
  */
 
-const API = () => (process.env.ENABLEBANKING_API_URL || 'https://api.enablebanking.com').replace(/\/$/, '');
+const API = () => (process.env.ENABLE_BANKING_API_URL || 'https://api.enablebanking.com').replace(/\/$/, '');
 const TIMEOUT_MS = 20_000;
 const MAX_PAGES = 25;
 
@@ -30,19 +31,51 @@ export class ProviderError extends Error {
 
 /* ---------- authentification de l'application ---------- */
 
+/**
+ * The application's private key, from ENABLE_BANKING_PRIVATE_KEY (the whole
+ * .pem content — never a file path: on Vercel there is no file to read).
+ * Accepted forms, as dashboards and .env files tend to mangle them:
+ * - real line breaks (pasted as is in Vercel) or escaped \n / \r\n on one line;
+ * - surrounded by single or double quotes;
+ * - the .pem file encoded in base64 (no "-----BEGIN" in the value).
+ * The key itself is never logged nor sent to the browser.
+ */
+export function normalizePem(raw: string | undefined): string {
+  let v = (raw ?? '').trim();
+  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1).trim();
+  v = v.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\r\n?/g, '\n');
+  if (v && !v.includes('-----BEGIN')) {
+    const decoded = Buffer.from(v.replace(/\s+/g, ''), 'base64').toString('utf8');
+    if (decoded.includes('-----BEGIN')) v = decoded.replace(/\r\n?/g, '\n');
+  }
+  // Line breaks lost (pasted on one line with spaces): rebuild the PEM block.
+  const flat = /^(-----BEGIN [A-Z ]+-----)\s*([A-Za-z0-9+/=\s]+?)\s*(-----END [A-Z ]+-----)$/.exec(v);
+  if (flat && !v.includes('\n')) {
+    const body = flat[2].replace(/\s+/g, '').match(/.{1,64}/g) ?? [];
+    v = [flat[1], ...body, flat[3]].join('\n');
+  }
+  // Each line trimmed: stray spaces around lines break PEM parsing.
+  return v
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l, i, all) => l || (i > 0 && i < all.length - 1))
+    .join('\n')
+    .trim();
+}
+
 function privateKeyPem(): string {
-  // Env vars often carry the PEM on one line with literal \n.
-  return (process.env.ENABLEBANKING_PRIVATE_KEY ?? '').replace(/\\n/g, '\n').trim();
+  return normalizePem(process.env.ENABLE_BANKING_PRIVATE_KEY);
 }
 
 /** Throws when the configured key cannot be read — reported as a blocker, not at request time. */
 export function checkKey(): string | null {
+  if (!privateKeyPem()) return 'ENABLE_BANKING_PRIVATE_KEY est vide.';
   try {
     const key = createPrivateKey(privateKeyPem());
-    if (key.asymmetricKeyType !== 'rsa') return 'La clé ENABLEBANKING_PRIVATE_KEY doit être une clé RSA.';
+    if (key.asymmetricKeyType !== 'rsa') return 'La clé ENABLE_BANKING_PRIVATE_KEY doit être une clé RSA.';
     return null;
   } catch {
-    return 'La clé ENABLEBANKING_PRIVATE_KEY est illisible (format PEM attendu).';
+    return 'La clé ENABLE_BANKING_PRIVATE_KEY est illisible (format PEM attendu).';
   }
 }
 
@@ -50,7 +83,7 @@ const b64u = (v: string | Buffer) => Buffer.from(v).toString('base64url');
 
 /** RS256 JWT, 1 hour (the API accepts up to 24 h). */
 export function appJwt(now = Math.floor(Date.now() / 1000)): string {
-  const header = { typ: 'JWT', alg: 'RS256', kid: process.env.ENABLEBANKING_APP_ID ?? '' };
+  const header = { typ: 'JWT', alg: 'RS256', kid: process.env.ENABLE_BANKING_APP_ID ?? '' };
   const body = { iss: 'enablebanking.com', aud: 'api.enablebanking.com', iat: now, exp: now + 3600 };
   const unsigned = `${b64u(JSON.stringify(header))}.${b64u(JSON.stringify(body))}`;
   const signer = createSign('RSA-SHA256');
@@ -139,6 +172,8 @@ export async function startAuthorization(opts: {
 
 export type RawAccount = {
   uid: string;
+  /** Same account, same hash, whatever the session: Enable Banking's stable identity. */
+  identification_hash?: string;
   name?: string;
   account_id?: { iban?: string; other?: { identification?: string } };
   currency?: string;
@@ -207,7 +242,7 @@ export async function getTransactions(uid: string, dateFrom: string): Promise<Ra
 
 const BALANCE_PREFERENCE = ['ITAV', 'CLAV', 'ITBD', 'CLBD', 'XPCD', 'OTHR'];
 
-/** The most "available now" balance the bank reports. */
+/** The most "available now" balance the bank reports, in cents. */
 export function pickBalance(balances: RawBalance[]): number | undefined {
   const sorted = [...balances].sort(
     (a, b) =>
@@ -215,8 +250,8 @@ export function pickBalance(balances: RawBalance[]): number | undefined {
       (BALANCE_PREFERENCE.indexOf(b.balance_type ?? 'OTHR') + 99) % 99,
   );
   for (const b of sorted) {
-    const n = Number(b.balance_amount?.amount);
-    if (Number.isFinite(n)) return Math.round(n * 100) / 100;
+    const cents = toCents(String(b.balance_amount?.amount ?? ''));
+    if (cents !== null) return cents;
   }
   return undefined;
 }
@@ -239,7 +274,7 @@ export function accountKind(raw: RawAccount): BankAccountKind {
 export function toAccount(
   raw: RawAccount,
   ids: { id: string; connectionId: string },
-  balance: number | undefined,
+  balanceCents: number | undefined,
   today: string,
 ): BankAccount {
   const iban = raw.account_id?.iban ?? raw.account_id?.other?.identification;
@@ -250,33 +285,41 @@ export function toAccount(
     kind: accountKind(raw),
     // Only the last four characters: enough to tell accounts apart.
     iban4: iban ? iban.replace(/\s/g, '').slice(-4) : undefined,
-    balance,
+    balanceCents,
     currency: raw.currency || 'EUR',
     updatedAt: today,
   };
 }
 
-function stableId(accountId: string, t: RawTransaction, amount: number, label: string, date: string): string {
-  const basis = t.entry_reference || t.transaction_id || `${date}|${amount}|${label}`;
+/**
+ * The bank's own reference when it gives one. Otherwise a fingerprint of
+ * date + amount + label; identical operations the same day (two coffees)
+ * are told apart by their rank, so neither is lost nor counted twice.
+ */
+function stableId(accountId: string, t: RawTransaction, amount: number, label: string, date: string, occurrence: number): string {
+  const fingerprint = `${date}|${amount}|${label}${occurrence > 1 ? `|#${occurrence}` : ''}`;
+  const basis = t.entry_reference || t.transaction_id || fingerprint;
   return `eb_${createHash('sha256').update(`${accountId}|${basis}`).digest('hex').slice(0, 24)}`;
 }
 
-/** Signed amount (debit negative), booking date, readable label, automatic category. */
-export function toTransaction(t: RawTransaction, accountId: string): BankTransaction | null {
-  const raw = Number(t.transaction_amount?.amount);
+/** Signed amount in cents (debit negative), booking date, readable label, automatic category. */
+export function toTransaction(t: RawTransaction, accountId: string, occurrence = 1): BankTransaction | null {
+  const raw = toCents(String(t.transaction_amount?.amount ?? ''));
   const date = t.booking_date || t.value_date || t.transaction_date;
-  if (!Number.isFinite(raw) || !date) return null;
-  const amount = Math.round((t.credit_debit_indicator === 'DBIT' ? -Math.abs(raw) : t.credit_debit_indicator === 'CRDT' ? Math.abs(raw) : raw) * 100) / 100;
+  if (raw === null || !date) return null;
+  const amountCents = t.credit_debit_indicator === 'DBIT' ? -Math.abs(raw) : t.credit_debit_indicator === 'CRDT' ? Math.abs(raw) : raw;
+  // Ids made before the switch to cents used the euro value: kept identical so nothing doubles.
+  const amount = amountCents / 100;
   const label =
     (t.remittance_information ?? []).join(' ').replace(/\s+/g, ' ').trim() ||
     (amount < 0 ? t.creditor?.name : t.debtor?.name) ||
     'Opération';
   return {
-    id: stableId(accountId, t, amount, label, date),
+    id: stableId(accountId, t, amount, label, date, occurrence),
     accountId,
     date: date.slice(0, 10),
     label: label.slice(0, 140),
-    amount,
+    amountCents,
     category: classify(label, amount),
     pending: t.status === 'PDNG' || undefined,
   };

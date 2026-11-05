@@ -6,10 +6,12 @@ import { useData } from '@/components/DataProvider';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import FlowChart from '@/components/finance/FlowChart';
 import { formatDate, formatShort, todayKey, uid } from '@/lib/logic';
-import { formatMoneyExact, monthKey, previousMonth } from '@/lib/business';
+import { monthKey, previousMonth } from '@/lib/business';
+import { formatCents, toCents } from '@/lib/money';
+import { transferContext } from '@/lib/transfers';
 import {
   SPEND_CATEGORIES,
-  accountsTotal,
+  accountsTotalCents,
   categoryColor,
   categoryLabel,
   mergeSync,
@@ -43,6 +45,7 @@ const COUNTRIES = [
 /** What the bank redirect reports, in plain words. Never shows a raw provider error. */
 const RETURN_MESSAGES: Record<string, string> = {
   connected: 'Banque connectée. Récupération des comptes…',
+  reconnected: 'Banque reconnectée : mêmes comptes, historique conservé. Récupération des nouvelles opérations…',
   state: 'Le retour de la banque n’a pas pu être vérifié (lien expiré ou ouvert dans un autre navigateur). Recommence la connexion.',
   refused: 'La connexion a été annulée ou refusée sur le site de la banque. Rien n’a été enregistré.',
   not_ready: 'La connexion bancaire n’est pas disponible sur ce déploiement.',
@@ -141,8 +144,8 @@ export default function BankPage() {
         const outcome = q.get('bank');
         if (outcome) {
           window.history.replaceState(null, '', window.location.pathname);
-          if (outcome === 'connected') {
-            setNotice({ tone: 'ok', text: RETURN_MESSAGES.connected });
+          if (outcome === 'connected' || outcome === 'reconnected') {
+            setNotice({ tone: 'ok', text: RETURN_MESSAGES[outcome] });
             void sync();
           } else {
             setNotice({ tone: 'warn', text: RETURN_MESSAGES[q.get('reason') ?? ''] ?? RETURN_MESSAGES.provider });
@@ -189,6 +192,24 @@ export default function BankPage() {
     }
   }
 
+  /** Renews an expired consent: same bank, same accounts, history kept. */
+  async function reconnect(c: BankConnection) {
+    setConnecting(c.id);
+    try {
+      const res = await fetch('/api/bank/connect', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ reconnect: c.id }),
+      });
+      const json = (await res.json()) as { url?: string; message?: string };
+      if (!res.ok || !json.url) throw new Error(json.message ?? 'La reconnexion n’a pas pu démarrer.');
+      window.location.assign(json.url);
+    } catch (err) {
+      setNotice({ tone: 'warn', text: err instanceof Error ? err.message : 'La reconnexion n’a pas pu démarrer.' });
+      setConnecting(null);
+    }
+  }
+
   async function disconnect(c: BankConnection, keepHistory: boolean) {
     setToDisconnect(null);
     let revoked = false;
@@ -224,13 +245,13 @@ export default function BankPage() {
 
   function addAccount() {
     if (accountName.trim() === '') return;
-    const parsed = Number(accountBalance.replace(',', '.'));
+    const parsed = accountBalance.trim() === '' ? null : toCents(accountBalance);
     const account: BankAccount = {
       id: uid(),
       connectionId: '',
       name: accountName.trim(),
       kind: accountKind,
-      balance: Number.isFinite(parsed) && accountBalance.trim() !== '' ? parsed : undefined,
+      balanceCents: parsed ?? undefined,
       currency: 'EUR',
       updatedAt: today,
     };
@@ -298,21 +319,25 @@ export default function BankPage() {
     () => (accountId ? bank.transactions.filter((t) => t.accountId === accountId) : bank.transactions),
     [bank.transactions, accountId],
   );
-  const mt = useMemo(() => monthTotals(txs, month), [txs, month]);
-  const prev = useMemo(() => monthTotals(txs, previousMonth(month)), [txs, month]);
-  const wk = useMemo(() => weekTotals(txs, today), [txs, today]);
-  const flows = useMemo(() => bankMonthlyFlows(txs, month, span), [txs, month, span]);
+  // Pairs are found across all accounts: the two legs of a transfer live on different ones.
+  const tctx = useMemo(() => transferContext(bank.transactions, bank.accounts), [bank.transactions, bank.accounts]);
+  const mt = useMemo(() => monthTotals(txs, month, tctx), [txs, month, tctx]);
+  const prev = useMemo(() => monthTotals(txs, previousMonth(month), tctx), [txs, month, tctx]);
+  const wk = useMemo(() => weekTotals(txs, today, tctx), [txs, today, tctx]);
+  const flows = useMemo(() => bankMonthlyFlows(txs, month, span, tctx), [txs, month, span, tctx]);
   const cats = useMemo(
-    () => spendByCategory(txs, { from: `${month}-01`, to: `${month}-31`, label: month }),
-    [txs, month],
+    () => spendByCategory(txs, { from: `${month}-01`, to: `${month}-31`, label: month }, tctx),
+    [txs, month, tctx],
   );
-  const top = useMemo(() => topExpenses(txs, month, 5), [txs, month]);
+  const top = useMemo(() => topExpenses(txs, month, 5, tctx), [txs, month, tctx]);
+  // The savings target is typed in euros by the user; compared in cents.
   const target = data.monthlySavingsTarget;
-  const ratio = savingsRatio(mt.saved, target);
+  const targetCents = toCents(target) ?? 0;
+  const ratio = savingsRatio(mt.savedCents, targetCents);
   const monthTxs = txs.filter((t) => monthKey(t.date) === month).sort((a, b) => (a.date < b.date ? 1 : -1));
   const isCurrent = month === monthKey(today);
-  const totalBalance = accountsTotal(bank.accounts);
-  const catMax = Math.max(1, ...cats.map((c) => c.amount));
+  const totalBalance = accountsTotalCents(bank.accounts);
+  const catMax = Math.max(1, ...cats.map((c) => c.amountCents));
   const connectionOf = (id: string) => bank.connections.find((c) => c.id === id);
   const shownInstitutions = (institutions ?? []).filter((i) =>
     i.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').includes(
@@ -358,7 +383,7 @@ export default function BankPage() {
               <b>Aucun fournisseur bancaire configuré.</b>
               <span>
                 La connexion s’active dès que les variables d’Enable Banking sont renseignées sur le serveur (
-                <code>ENABLEBANKING_APP_ID</code>, <code>ENABLEBANKING_PRIVATE_KEY</code>). En attendant, l’import CSV
+                <code>ENABLE_BANKING_APP_ID</code>, <code>ENABLE_BANKING_PRIVATE_KEY</code>). En attendant, l’import CSV
                 ci-dessous fonctionne.
               </span>
             </div>
@@ -398,9 +423,16 @@ export default function BankPage() {
                     </small>
                     {c.error ? <small className="bk-err">{c.error}</small> : null}
                   </div>
-                  <button className="btn btn-ghost btn-sm" onClick={() => setToDisconnect(c)}>
-                    Déconnecter
-                  </button>
+                  <div className="bk-link-actions">
+                    {c.status === 'needs_action' && ready ? (
+                      <button className="btn btn-accent btn-sm" onClick={() => reconnect(c)} disabled={connecting !== null}>
+                        {connecting === c.id ? 'Ouverture…' : 'Reconnecter'}
+                      </button>
+                    ) : null}
+                    <button className="btn btn-ghost btn-sm" onClick={() => setToDisconnect(c)}>
+                      Déconnecter
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -447,17 +479,17 @@ export default function BankPage() {
             <div className="card bk-story">
               <p>
                 {isCurrent ? 'Ce mois-ci' : `En ${monthLabel(month)}`}, tes dépenses sont de{' '}
-                <b className="mono">{formatMoneyExact(mt.spent)}</b>.
+                <b className="mono">{formatCents(mt.spentCents)}</b>.
               </p>
               <p>
-                {mt.saved >= 0 ? (
+                {mt.savedCents >= 0 ? (
                   <>
-                    Tu as économisé <b className="mono">{formatMoneyExact(mt.saved)}</b>
+                    Tu as économisé <b className="mono">{formatCents(mt.savedCents)}</b>
                     <small> (revenus − dépenses)</small>.
                   </>
                 ) : (
                   <>
-                    Tes dépenses dépassent tes revenus de <b className="mono">{formatMoneyExact(-mt.saved)}</b>.
+                    Tes dépenses dépassent tes revenus de <b className="mono">{formatCents(-mt.savedCents)}</b>.
                   </>
                 )}
               </p>
@@ -465,7 +497,7 @@ export default function BankPage() {
                 <>
                   <p>
                     Ton objectif d’épargne est à <b className="mono">{Math.round(ratio * 100)} %</b>
-                    <small> ({formatMoneyExact(Math.max(0, mt.saved))} sur {formatMoneyExact(target)})</small>.
+                    <small> ({formatCents(Math.max(0, mt.savedCents))} sur {formatCents(targetCents)})</small>.
                   </p>
                   <div className="bar bk-goal-bar" role="progressbar" aria-valuenow={Math.round(Math.min(1, ratio) * 100)} aria-valuemin={0} aria-valuemax={100}>
                     <i style={{ width: `${Math.min(1, ratio) * 100}%` }} />
@@ -497,27 +529,31 @@ export default function BankPage() {
             <div className="fin-kpis bk-kpis">
               <div>
                 <span>Dépenses du mois</span>
-                <b className="mono">{formatMoneyExact(mt.spent)}</b>
-                {prev.spent > 0 ? (
+                <b className="mono">{formatCents(mt.spentCents)}</b>
+                {prev.spentCents > 0 ? (
                   <small className="mono">
-                    {mt.spent >= prev.spent ? '+' : '−'}
-                    {formatMoneyExact(Math.abs(mt.spent - prev.spent))} vs mois préc.
+                    {mt.spentCents >= prev.spentCents ? '+' : '−'}
+                    {formatCents(Math.abs(mt.spentCents - prev.spentCents))} vs mois préc.
                   </small>
                 ) : null}
               </div>
               <div>
                 <span>Dépenses de la semaine</span>
-                <b className="mono">{formatMoneyExact(wk.spent)}</b>
+                <b className="mono">{formatCents(wk.spentCents)}</b>
                 <small className="mono">depuis le {formatShort(wk.from)}</small>
               </div>
               <div>
                 <span>Revenus du mois</span>
-                <b className="mono">{formatMoneyExact(mt.earned)}</b>
+                <b className="mono">{formatCents(mt.earnedCents)}</b>
               </div>
               <div>
                 <span>Vers l’épargne</span>
-                <b className="mono">{formatMoneyExact(mt.toSavings)}</b>
-                <small>virements du mois</small>
+                <b className="mono">{formatCents(mt.toSavingsCents)}</b>
+                <small>
+                  {mt.transfers > 0
+                    ? `${mt.transfers} virement${mt.transfers > 1 ? 's' : ''} entre tes comptes, hors dépenses et revenus`
+                    : 'virements vers tes comptes épargne'}
+                </small>
               </div>
             </div>
 
@@ -544,10 +580,10 @@ export default function BankPage() {
                         <div className="row">
                           <span>{categoryLabel(c.category)}</span>
                           <span className="mono">
-                            <b>{formatMoneyExact(c.amount)}</b> · {Math.round(c.share * 100)} %
+                            <b>{formatCents(c.amountCents)}</b> · {Math.round(c.share * 100)} %
                           </span>
                         </div>
-                        <div className="fin-cat-bar"><i style={{ width: `${(c.amount / catMax) * 100}%` }} /></div>
+                        <div className="fin-cat-bar"><i style={{ width: `${(c.amountCents / catMax) * 100}%` }} /></div>
                       </div>
                     ))}
                   </div>
@@ -566,7 +602,7 @@ export default function BankPage() {
                           <b>{t.label}</b>
                           <small>{categoryLabel(t.category)} · {formatShort(t.date)}</small>
                         </span>
-                        <b className="mono">−{formatMoneyExact(-t.amount)}</b>
+                        <b className="mono">−{formatCents(-t.amountCents)}</b>
                       </button>
                     ))}
                   </div>
@@ -587,7 +623,7 @@ export default function BankPage() {
         {totalBalance !== null ? (
           <div className="patrimoine-total" style={{ marginBottom: 10 }}>
             <span>Solde total</span>
-            <b className="mono">{formatMoneyExact(totalBalance)}</b>
+            <b className="mono">{formatCents(totalBalance)}</b>
           </div>
         ) : null}
         {bank.accounts.length === 0 ? (
@@ -604,7 +640,7 @@ export default function BankPage() {
                       {ACCOUNT_KINDS.find((k) => k.id === a.kind)?.label}
                       {a.iban4 ? ` · ••${a.iban4}` : ''}
                       {conn ? ` · ${conn.institution}` : ' · import manuel'}
-                      {typeof a.balance === 'number' ? ` · ${formatMoneyExact(a.balance)}` : ''}
+                      {typeof a.balanceCents === 'number' ? ` · ${formatCents(a.balanceCents)}` : ''}
                     </div>
                   </div>
                   {conn ? null : (
@@ -688,11 +724,12 @@ export default function BankPage() {
                     <i className="tx-dot" style={{ background: categoryColor(t.category) }} />
                     {categoryLabel(t.category)} · {formatDate(t.date)}
                     {t.pending ? ' · en attente' : ''}
+                    {tctx.pairs.has(t.id) ? ' · virement interne' : ''}
                   </span>
                 </span>
-                <b className="mono tx-amount" data-in={t.amount > 0}>
-                  {t.amount > 0 ? '+' : '−'}
-                  {formatMoneyExact(Math.abs(t.amount))}
+                <b className="mono tx-amount" data-in={t.amountCents > 0}>
+                  {t.amountCents > 0 ? '+' : '−'}
+                  {formatCents(Math.abs(t.amountCents))}
                 </b>
               </button>
             ))}
@@ -772,8 +809,8 @@ export default function BankPage() {
             <div className="sheet-grip" />
             <div className="sheet-title">{editing.label}</div>
             <div className="ex-meta" style={{ marginBottom: 14 }}>
-              {formatDate(editing.date)} · {editing.amount > 0 ? '+' : '−'}
-              {formatMoneyExact(Math.abs(editing.amount))}
+              {formatDate(editing.date)} · {editing.amountCents > 0 ? '+' : '−'}
+              {formatCents(Math.abs(editing.amountCents))}
             </div>
             <div className="field" style={{ marginTop: 0 }}>
               <span>Catégorie</span>

@@ -21,7 +21,9 @@ export default function LoginPage() {
         const json = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(json.error ?? 'Connexion impossible');
       }
-      window.location.href = '/';
+      // Back to the page that asked for the login (Jarvis), never to another site.
+      const next = new URLSearchParams(window.location.search).get('next') ?? '';
+      window.location.href = /^\/jarvis(\/[\w-]*)?(\?[\w=&-]*)?$/.test(next) ? next : '/';
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setBusy(false);

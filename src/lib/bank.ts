@@ -7,6 +7,7 @@ import type {
   SpendCategory,
 } from './types';
 import { shiftKey, weekDatesFrom } from './logic';
+import type { TransferContext } from './transfers';
 
 /**
  * Bank layer.
@@ -35,7 +36,7 @@ export const BANK_PROVIDERS: BankProviderInfo[] = [
   {
     id: 'enablebanking',
     label: 'Enable Banking',
-    envVars: ['ENABLEBANKING_APP_ID', 'ENABLEBANKING_PRIVATE_KEY'],
+    envVars: ['ENABLE_BANKING_APP_ID', 'ENABLE_BANKING_PRIVATE_KEY'],
     docs: 'https://enablebanking.com/docs/api/quick-start/',
     note: 'Agréé DSP2, banques européennes. Gratuit pour relier ses propres comptes (mode restreint).',
   },
@@ -121,10 +122,6 @@ export function categoryColor(id: SpendCategory): string {
  */
 const RULES: { category: SpendCategory; keywords: string[] }[] = [
   {
-    category: 'epargne',
-    keywords: ['livret a', 'livret jeune', 'ldds', 'epargne', 'pea', 'assurance vie', 'per '],
-  },
-  {
     category: 'abonnements',
     keywords: [
       'netflix', 'spotify', 'deezer', 'disney', 'prime video', 'canal+', 'canal plus',
@@ -193,8 +190,9 @@ const RULES: { category: SpendCategory; keywords: string[] }[] = [
 ];
 
 /**
- * Best-guess category for a transaction label. Savings transfers are caught
- * first, then the keyword rules; money coming in that matched nothing is
+ * Best-guess category for a transaction label, from the keyword rules. Never
+ * "Épargne": a transfer to savings is recognised by its other leg on a savings
+ * account (lib/transfers.ts), not by its wording. Money coming in that matched nothing is
  * income, money going out that matched nothing stays "autre" rather than
  * being filed under a guess.
  */
@@ -257,11 +255,12 @@ export function inRange(date: string, range: Range): boolean {
 
 /* ---------- agrégats ---------- */
 
+/** All figures in integer cents. */
 export type BankSummary = {
-  spent: number;
-  earned: number;
-  saved: number;
-  net: number;
+  spentCents: number;
+  earnedCents: number;
+  savedCents: number;
+  netCents: number;
   count: number;
 };
 
@@ -270,31 +269,25 @@ export type BankSummary = {
  * like spending — money set aside is not money gone.
  */
 export function summarize(transactions: BankTransaction[], range: Range): BankSummary {
-  let spent = 0;
-  let earned = 0;
-  let saved = 0;
+  let spentCents = 0;
+  let earnedCents = 0;
+  let savedCents = 0;
   let count = 0;
 
   for (const t of transactions) {
     if (!inRange(t.date, range)) continue;
     count += 1;
-    if (t.category === 'epargne') saved += Math.abs(t.amount);
-    else if (t.amount > 0) earned += t.amount;
-    else spent += -t.amount;
+    if (t.category === 'epargne') savedCents += Math.abs(t.amountCents);
+    else if (t.amountCents > 0) earnedCents += t.amountCents;
+    else spentCents += -t.amountCents;
   }
 
-  return {
-    spent: round2(spent),
-    earned: round2(earned),
-    saved: round2(saved),
-    net: round2(earned - spent),
-    count,
-  };
+  return { spentCents, earnedCents, savedCents, netCents: earnedCents - spentCents, count };
 }
 
 export type CategorySlice = {
   category: SpendCategory;
-  amount: number;
+  amountCents: number;
   share: number;
   count: number;
 };
@@ -303,31 +296,32 @@ export type CategorySlice = {
 export function spendByCategory(
   transactions: BankTransaction[],
   range: Range,
+  ctx?: TransferContext,
 ): CategorySlice[] {
-  const totals = new Map<SpendCategory, { amount: number; count: number }>();
+  const totals = new Map<SpendCategory, { cents: number; count: number }>();
   let total = 0;
 
   for (const t of transactions) {
     if (!inRange(t.date, range)) continue;
-    if (t.amount >= 0 || t.category === 'epargne') continue;
-    const row = totals.get(t.category) ?? { amount: 0, count: 0 };
-    row.amount += -t.amount;
+    if (t.amountCents >= 0 || t.category === 'epargne' || ctx?.pairs.has(t.id)) continue;
+    const row = totals.get(t.category) ?? { cents: 0, count: 0 };
+    row.cents += -t.amountCents;
     row.count += 1;
     totals.set(t.category, row);
-    total += -t.amount;
+    total += -t.amountCents;
   }
 
   return [...totals.entries()]
     .map(([category, row]) => ({
       category,
-      amount: round2(row.amount),
-      share: total > 0 ? row.amount / total : 0,
+      amountCents: row.cents,
+      share: total > 0 ? row.cents / total : 0,
       count: row.count,
     }))
-    .sort((a, b) => b.amount - a.amount);
+    .sort((a, b) => b.amountCents - a.amountCents);
 }
 
-/** Running balance day by day over a window, for the curve. */
+/** Running balance day by day over a window, in cents. */
 export function balanceSeries(
   transactions: BankTransaction[],
   range: Range,
@@ -335,7 +329,7 @@ export function balanceSeries(
   const deltas = new Map<string, number>();
   for (const t of transactions) {
     if (!inRange(t.date, range)) continue;
-    deltas.set(t.date, (deltas.get(t.date) ?? 0) + t.amount);
+    deltas.set(t.date, (deltas.get(t.date) ?? 0) + t.amountCents);
   }
 
   const points: { date: string; value: number }[] = [];
@@ -344,17 +338,27 @@ export function balanceSeries(
   let guard = 0;
   while (cursor <= range.to && guard < 400) {
     running += deltas.get(cursor) ?? 0;
-    points.push({ date: cursor, value: round2(running) });
+    points.push({ date: cursor, value: running });
     cursor = shiftKey(cursor, 1);
     guard += 1;
   }
   return points;
 }
 
-export function accountsTotal(accounts: BankAccount[]): number | null {
-  const known = accounts.filter((a) => typeof a.balance === 'number');
+/** Sum of the known balances, in cents; null when no bank gave one. */
+export function accountsTotalCents(accounts: BankAccount[]): number | null {
+  const known = accounts.filter((a) => typeof a.balanceCents === 'number');
   if (known.length === 0) return null;
-  return round2(known.reduce((a, x) => a + (x.balance ?? 0), 0));
+  return known.reduce((a, x) => a + (x.balanceCents ?? 0), 0);
+}
+
+/**
+ * What the bank accounts add to the net worth on the Finances page: euro
+ * accounts whose balance is known (another currency is not converted).
+ */
+export function bankWorthCents(accounts: BankAccount[]): { cents: number; count: number } {
+  const known = accounts.filter((a) => typeof a.balanceCents === 'number' && (a.currency || 'EUR') === 'EUR');
+  return { cents: known.reduce((s, a) => s + (a.balanceCents ?? 0), 0), count: known.length };
 }
 
 export function transactionsOf(bank: Bank, accountId: string | null): BankTransaction[] {
@@ -362,10 +366,6 @@ export function transactionsOf(bank: Bank, accountId: string | null): BankTransa
     ? bank.transactions.filter((t) => t.accountId === accountId)
     : bank.transactions;
   return [...rows].sort((a, b) => (a.date < b.date ? 1 : -1));
-}
-
-function round2(value: number): number {
-  return Math.round(value * 100) / 100;
 }
 
 /* ---------- fusion d'une synchronisation ---------- */
@@ -396,8 +396,8 @@ export function mergeSync(bank: Bank, p: SyncPayload): Bank {
       accounts[i] = {
         ...old,
         ...incoming,
-        balance: incoming.balance ?? old.balance,
-        updatedAt: incoming.balance !== undefined ? incoming.updatedAt : old.updatedAt,
+        balanceCents: incoming.balanceCents ?? old.balanceCents,
+        updatedAt: incoming.balanceCents !== undefined ? incoming.updatedAt : old.updatedAt,
       };
     }
   }
@@ -423,4 +423,26 @@ export function mergeSync(bank: Bank, p: SyncPayload): Bank {
     transactions: [...byId.values()],
     lastSyncAt: p.connections.length > 0 ? p.syncedAt : bank.lastSyncAt,
   };
+}
+
+/**
+ * When the app saves its whole document, the server may hold a newer bank
+ * sync (the daily job ran while the app was open). The newer sync is kept:
+ * its balances and transactions are merged back in, for the connections the
+ * app still has — a bank disconnected in the app meanwhile is not revived.
+ * Categories corrected in the app are kept (mergeSync).
+ */
+export function reconcileBank(incoming: Bank, stored: Bank): Bank {
+  if (!stored.lastSyncAt || (incoming.lastSyncAt && incoming.lastSyncAt >= stored.lastSyncAt)) return incoming;
+  const kept = new Set(incoming.connections.map((c) => c.id));
+  if (kept.size === 0) return incoming;
+  const accounts = stored.accounts.filter((a) => kept.has(a.connectionId));
+  const accountIds = new Set(accounts.map((a) => a.id));
+  const storedConn = new Map(stored.connections.map((c) => [c.id, c]));
+  return mergeSync(incoming, {
+    connections: incoming.connections.map((c) => storedConn.get(c.id) ?? c),
+    accounts,
+    transactions: stored.transactions.filter((t) => accountIds.has(t.accountId)),
+    syncedAt: stored.lastSyncAt,
+  });
 }

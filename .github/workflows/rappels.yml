@@ -15,7 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Déclencher les rappels dus
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "Le secret CRON_SECRET n'est pas défini dans GitHub (Settings → Secrets and variables → Actions)." >&2
+            exit 1
+          fi
           curl -sS -f -X POST \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET || 'vejhEjq1NCHLlcS1NOVTATLH' }}" \
+            -H "Authorization: Bearer $CRON_SECRET" \
             https://muscu-tracker-phi.vercel.app/api/cron/notify

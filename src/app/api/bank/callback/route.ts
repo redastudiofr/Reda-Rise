@@ -1,7 +1,8 @@
 import { bankGate } from '@/lib/bankServer';
-import { ProviderError, accountKind, createSession } from '@/lib/bankProviders/enableBanking';
+import { ProviderError, createSession, deleteSession } from '@/lib/bankProviders/enableBanking';
 import { STATE_COOKIE, checkPendingAuth, randomId } from '@/lib/bankSecurity';
-import { saveLink } from '@/lib/bankVault';
+import { linkAccount, linkToRenew, relinkAccounts } from '@/lib/bankRelink';
+import { loadLinks, saveLink } from '@/lib/bankVault';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -48,23 +49,34 @@ export async function GET(req: Request) {
 
   try {
     const session = await createSession(code);
-    const linkId = randomId('bl');
+    const incoming = session.accounts.map((a) => linkAccount(a, ''));
+    const validUntil = session.validUntil?.slice(0, 10);
+    const { links } = await loadLinks();
+    const renewed = linkToRenew(links, pending, incoming);
+    if (renewed) {
+      // Same link, same account ids: the history carries on where it stopped.
+      const oldSession = renewed.sessionId;
+      await saveLink({
+        ...renewed,
+        sessionId: session.sessionId,
+        validUntil,
+        accounts: relinkAccounts(renewed.accounts, incoming, () => randomId('ba')),
+      });
+      if (oldSession !== session.sessionId) {
+        // The expired session is closed at the provider; failing that changes nothing here.
+        await deleteSession(oldSession).catch(() => undefined);
+      }
+      return back(req, { bank: 'reconnected' });
+    }
     await saveLink({
-      id: linkId,
+      id: randomId('bl'),
       provider: 'enablebanking',
       sessionId: session.sessionId,
       institution: pending.institution,
       country: pending.country,
-      validUntil: session.validUntil?.slice(0, 10),
+      validUntil,
       createdAt: new Date().toISOString(),
-      accounts: session.accounts.map((a) => ({
-        id: randomId('ba'),
-        uid: a.uid,
-        name: a.name || a.product || 'Compte',
-        kind: accountKind(a),
-        iban4: (a.account_id?.iban ?? a.account_id?.other?.identification)?.replace(/\s/g, '').slice(-4),
-        currency: a.currency || 'EUR',
-      })),
+      accounts: incoming.map((a) => ({ ...a, id: randomId('ba') })),
     });
     return back(req, { bank: 'connected' });
   } catch (err) {

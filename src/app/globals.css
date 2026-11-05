@@ -105,6 +105,32 @@ a {
   letter-spacing: -0.022em;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.jarvis-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 229, 255, 0.45);
+  color: #7ff3ff;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  background: rgba(0, 229, 255, 0.06);
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.12);
+}
+
+.jarvis-link:active {
+  transform: scale(0.97);
+}
+
 .topbar .sub {
   margin: 2px 0 0;
   font-size: 13px;
@@ -4486,6 +4512,16 @@ a {
   background: var(--c);
 }
 
+.fin-split .fin-split-bank {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.2);
+  text-underline-offset: 3px;
+}
+
 .fin-split b {
   color: var(--text);
   font-weight: 620;
@@ -5146,6 +5182,7 @@ a {
 
 .bk-link {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
@@ -5159,9 +5196,15 @@ a {
 }
 
 .bk-link-main {
-  flex: 1;
+  flex: 1 1 160px;
   min-width: 0;
   display: grid;
+}
+
+.bk-link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .bk-link-main b {
