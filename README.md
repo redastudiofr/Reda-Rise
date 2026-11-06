@@ -7,22 +7,63 @@ front, routes API et planification des rappels.
 
 ## Ce que fait l'app
 
-Cinq onglets, pensés pour le pouce sur mobile.
+Six onglets, pensés pour le pouce sur mobile, dont le profil.
 
-- **Aujourd'hui** — XP total, niveau (Fondation, Régularité, Discipline,
-  Performance, Elite) avec barre de progression, jours d'affilée, taux de
-  réussite du jour et sur 7 jours, séance du jour, checklist quotidienne de
-  10 tâches valant 130 XP au total.
-- **Semaine** — le planning hebdomadaire fixe. Lundi jambes, mardi dos et
-  biceps, mercredi repos actif, jeudi pectoraux et triceps, vendredi épaules et
-  abdos, samedi jambes, dimanche repos. De la marche à chaque jour. Saisie série
-  par série, suggestion automatique de la charge suivante quand le haut de la
-  fourchette de reps est atteint sur toutes les séries, historique.
-- **Objectifs** — objectifs personnels, avec ou sans cible chiffrée et barre de
-  progression.
-- **Progrès** — mensurations (poids, bras, poitrine, taille, cuisse) avec courbe
-  dans le temps, et records par exercice (1RM estimé, formule d'Epley) avec
-  l'écart au record précédent.
+- **Jarvis** (`/jarvis`, bouton en haut de l'accueil) — assistant vocal :
+  débrief du matin (mails, ventes Shopify, météo, actualité, agenda), commandes
+  vocales et planning créé dans Google Agenda après confirmation. Ouverture
+  automatique au démarrage du Mac avec animation et son. Guide complet :
+  [docs/JARVIS.md](docs/JARVIS.md).
+- **Aujourd'hui** — objectifs du jour personnalisables (heure, catégorie,
+  validation, filtres), progression de la journée, niveau, jours d'affilée,
+  checklist Discipline personnalisable (1 à 15 objectifs, 1 à 20 XP chacun ;
+  modifier la liste ne change jamais l'XP des jours passés), bilan du jour, rappels à
+  20 h et 22 h s'il reste des objectifs.
+- **Progression** (`/progression`) — niveau, nom et palier (Bronze, Argent,
+  Or, Platine, Diamant, Mythique), XP vers le niveau suivant, statistiques,
+  XP gagnée jour par jour, courbe de progression et barème de l'XP. L'XP
+  vient des objectifs, des tâches Discipline, des finances et de bonus
+  (journée complète, journée bouclée, paliers de série). Elle est recalculée
+  depuis les données enregistrées : rien ne peut dériver.
+- **Calendrier** — agenda, tâches et projets réunis. Vues Jour, 3 jours,
+  Semaine et Mois ; événements (rendez-vous, cours, réunions, événements,
+  anniversaires) avec heure, durée, description, répétition et rappels
+  multiples (5 min, 15 min, 30 min, 1 h, 1 jour ou personnalisé) ; tâches avec
+  priorité, statut, catégorie et projet ; projets avec leur progression ; les
+  objectifs du jour placés à leur heure. Création en touchant un créneau,
+  glisser-déposer (appui long sur mobile), durée étirable, recherche, filtres.
+- **Finances** (`/finances`) — finances personnelles, séparées du Business.
+  Comptes tenus à la main (compte bancaire, épargne, espèces, autre) et
+  patrimoine disponible ; revenus et dépenses par catégorie, évolution sur 6
+  ou 12 mois ; abonnements avec prix, fréquence, date de prélèvement,
+  catégorie, compte, totaux mensuel et annuel, et une analyse neutre
+  (utilisation, prix, importance, alternative) qui suggère sans jamais
+  décider ; objectifs d'épargne avec progression et pistes générales (pas un
+  conseil financier personnalisé). Aucune connexion bancaire ici.
+- **Banque & analyse** (`/finances/banque`) — connexion bancaire via
+  Enable Banking (DSP2, banques européennes) ou import de relevé CSV ; soldes
+  et opérations récupérés en lecture, classés automatiquement. Analyse :
+  dépenses du mois et de la semaine, revenus, épargne, évolution mensuelle,
+  catégories, principales dépenses, objectif d'épargne mensuel. Voir
+  « Connexion bancaire » plus bas.
+- **Business** (`/entrepreneuriat`) — réservé aux entreprises. Plusieurs
+  entreprises, chacune avec son tableau de bord : CA, dépenses, bénéfice
+  estimé, marge, trésorerie, évolution mensuelle (graphiques), objectifs (CA,
+  bénéfice ou chiffre libre), étapes, projets et tâches (partagés avec le
+  calendrier), opérations.
+
+- **Vêtements** (`/vetements`) — uniquement les pièces de la boutique
+  redastudio.fr. « Importer la collection » lit le catalogue public de la
+  boutique (Shopify `/products.json` ou WooCommerce Store API) et ajoute ou
+  met à jour les pièces ; on peut aussi en ajouter une à la main, avec son
+  lien redastudio.fr (tout autre site est refusé). Chaque pièce rapporte son
+  XP (1 à 200) une seule fois, à la première commande confirmée. Une pièce
+  peut être réservée à partir d'un niveau (pièce exclusive).
+- **Débloquables** (`/profil/debloquables`) — ce que chaque niveau ouvre :
+  thèmes de couleur pour toute l'app (Bordeaux par défaut, Rubis, Grenat,
+  Cuivre, Or, Néon rouge, Platine, Mythique), cadres pour la photo de profil,
+  titres et pièces exclusives. Annoncés lors de la montée de niveau.
+- **Profil** — identité, récompenses et classement, mensurations.
 - **Réglages** — profil, fuseau horaire, heures de tous les rappels, activation
   des notifications push sur l'appareil, notification de test.
 
@@ -47,22 +88,20 @@ sur Vercel (Project → Settings → Environment Variables).
 | --- | --- |
 | `APP_PASSWORD` | Mot de passe d’accès. **Non défini = app ouverte, sans login** |
 | `AUTH_SECRET` | Secret HMAC signant le cookie de session |
-| `CRON_SECRET` | Secret exigé par `/api/cron/notify` |
+| `CRON_SECRET` | Secret exigé par les tâches planifiées (`/api/cron/notify`, `/api/cron/bank-sync`), envoyé en `Authorization: Bearer`. **Non défini = toutes les tâches planifiées refusées** |
+| `ENABLE_BANKING_APP_ID` / `ENABLE_BANKING_PRIVATE_KEY` | Application Enable Banking : identifiant et contenu complet du fichier `.pem` (pas un chemin de fichier) |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Paire de clés Web Push |
 | `VAPID_SUBJECT` | `mailto:` de contact exigé par le protocole VAPID |
 | `POSTGRES_URL` | Chaîne de connexion Postgres (ajoutée automatiquement par l'intégration) |
 
-Toutes, sauf `APP_PASSWORD`, ont une valeur de repli codée dans le projet pour
-qu'un premier déploiement fonctionne immédiatement. Ces valeurs par défaut sont
-visibles dans le dépôt : remplace-les si l'app doit rester privée.
+`CRON_SECRET` n'a aucune valeur par défaut. `AUTH_SECRET` et les clés VAPID en
+ont une, publique dans le dépôt : définis les tiens sur Vercel. L'écran de
+connexion bloque une connexion après 5 mots de passe faux en 15 minutes (30 par
+heure toutes connexions confondues).
 
-Valeurs générées pour ce projet, à coller dans **Environment Variables** sur
-Vercel (une ligne = une variable) :
+Clés VAPID générées pour ce projet :
 
 ```
-# APP_PASSWORD=  (laisser vide ou absent pour une app sans mot de passe)
-AUTH_SECRET=aTNau--fShcJ1whzRdM_IUJpZPQvTvUojY6nxhkATlk
-CRON_SECRET=vejhEjq1NCHLlcS1NOVTATLH
 VAPID_PUBLIC_KEY=BCXIXGZJ9R2h0-ici0R5MkNYi729igaLVqKWaZoWXiK6I4TR8gUpw3J8MdFfxD05-XHx22MbUJZdWyUNesMWvik
 VAPID_PRIVATE_KEY=exgvMVSdv8nSnnsDI5HL-3QOdUL5K9j-Ei-NFXArd8A
 VAPID_SUBJECT=mailto:obsyde.fr@gmail.com
@@ -165,7 +204,9 @@ de 75 minutes absorbe l'imprécision du planificateur : un rappel prévu à 9 h 
 part encore s'il est déclenché à 9 h 40, mais jamais deux fois.
 
 Rappels gérés : créatine (heure fixe), hydratation (toutes les N heures entre
-deux bornes), 3 repas, sommeil, séance (aux jours d'entraînement choisis).
+deux bornes), 3 repas, sommeil, objectifs, rappels du soir (20 h et 22 h s'il
+reste des objectifs), bilan du jour, et les rappels de chaque événement ou
+tâche du calendrier.
 Toutes les heures se règlent dans l'écran Réglages.
 
 ## Installer sur l'écran d'accueil
@@ -193,10 +234,14 @@ l'installation donne l'icône et le mode plein écran.
 ```
 src/
   app/
-    page.tsx               Aujourd'hui (checklist, XP, niveau, séance du jour)
-    semaine/               Planning hebdomadaire, saisie et historique
-    objectifs/             Objectifs personnels
-    progres/               Mensurations, courbes et records
+    page.tsx               Aujourd'hui (objectifs, checklist, XP, niveau, bilan)
+    progression/           Niveau, statistiques, courbe et paliers
+    quetes/                Toutes les quêtes et objectifs
+    calendrier/            Agenda : vues, tâches, projets
+    finances/              Comptes, dépenses, abonnements, épargne
+    entrepreneuriat/       Entreprises et tableau de bord par entreprise
+    finances/investir/     Portefeuille d'investissement
+    profil/                Profil, mensurations ; recompenses/ et classement
     reglages/              Profil, rappels, activation push
     login/                 Écran de connexion
     api/
@@ -206,19 +251,44 @@ src/
       push/subscribe       Enregistrement et suppression d'abonnement
       push/test            Notification de test
       cron/notify          Envoi des rappels dus
+      bank, market         Connecteurs optionnels (agrégateur bancaire, cotations)
+      leaderboard          Classement partagé
   lib/
-    program.ts             Le planning de la semaine et ses exercices
-    logic.ts               XP, niveaux, séries, records, suggestions de charge
+    program.ts             Données par défaut, migration, planning de la semaine
+    logic.ts               Dates, checklist Discipline
+    xp.ts                  XP par jour, bonus, niveaux et noms, séries, statistiques
+    agenda.ts              Répétitions, fusion du jour, rappels, recherche, projets
+    finance.ts             Comptes, soldes, abonnements, analyse, épargne
     schedule.ts            Calcul des rappels dus
     push.ts                Envoi web-push (VAPID)
     db.ts                  Postgres, avec repli en mémoire
     auth.ts                Cookie HMAC (Web Crypto, compatible middleware)
-  middleware.ts            Protection de toutes les routes
+  middleware.ts            Protection des routes du propriétaire
 public/
   manifest.webmanifest     Manifeste PWA
   sw.js                    Service worker : cache hors-ligne + push
   icons/                   Icônes 192, 512, maskable, apple-touch
 ```
+
+## Connexion bancaire
+
+- L'utilisateur s'identifie sur le site de sa banque ; l'app ne reçoit qu'un
+  code, échangé côté serveur contre une session de lecture (90 jours).
+- La session et les identifiants de comptes du fournisseur restent sur le
+  serveur, chiffrés (AES-256-GCM) dans la table `bank_links`. Le navigateur ne
+  reçoit que le nom de la banque, les 4 derniers caractères de l'IBAN, les
+  soldes et les opérations.
+- Le retour de la banque est vérifié par un `state` aléatoire lié à un cookie
+  httpOnly scellé, à usage unique, valable 15 minutes.
+- Synchronisation quotidienne : `/api/cron/bank-sync` (Vercel Cron, `0 5 * * *`
+  UTC, une fois par jour sur l'offre Hobby, dans l'heure). Elle fusionne soldes et
+  opérations côté serveur ; une app restée ouverte ne peut plus écraser cette
+  synchro en enregistrant une copie plus ancienne.
+- Refus de se connecter tant que l'app n'est pas protégée (`APP_PASSWORD`) et
+  qu'`AUTH_SECRET` n'est pas un secret propre. Réponses `no-store`.
+- Déconnexion : l'autorisation est retirée chez le fournisseur et le lien
+  supprimé ; l'historique peut être gardé ou effacé.
+
 
 ## Notes
 
@@ -227,8 +297,6 @@ public/
   réseau : c'est le `localStorage` du client qui assure le mode hors-ligne.
 - Les données sont stockées comme un seul document JSON (`app_state`), ce qui
   suffit largement pour un utilisateur unique et simplifie la synchronisation.
-- Les records sont recalculés à partir de l'historique des séances, il n'y a
-  donc rien à corriger à la main si une séance est modifiée.
 
 ## Ce qui demande une configuration externe
 
@@ -238,7 +306,7 @@ donnée de remplacement.
 
 ### Connexion bancaire
 
-`Business → Comptes bancaires`
+`Finances → Banque & analyse`
 
 Se connecter à une banque impose de passer par un agrégateur agréé DSP2
 (Powens, Bridge, GoCardless, Tink, Plaid). L'utilisateur s'authentifie sur le
@@ -264,7 +332,7 @@ classement automatique par catégorie.
 
 ### Cotations de marché
 
-`Business → Investissements`
+`Finances → Investissements`
 
 Sans fournisseur de cotations, la valeur actuelle de chaque position est celle
 que l'utilisateur saisit lui-même, et une position sans valeur saisie est

@@ -1,0 +1,12 @@
+node_modules
+.next
+.vercel
+.env
+.env.local
+*.tsbuildinfo
+next-env.d.ts
+
+# Clés privées (Enable Banking…) : jamais dans le dépôt
+*.pem
+.env*.local
+.data
