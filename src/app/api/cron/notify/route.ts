@@ -1,0 +1,54 @@
+import { NextResponse } from 'next/server';
+import { alreadySent, markSent, readData } from '@/lib/db';
+import { dueNotifications, localNow, objectiveReminders } from '@/lib/schedule';
+import { sendToAll } from '@/lib/push';
+import { agendaReminders } from '@/lib/agenda';
+import { cronAuthorized } from '@/lib/cronAuth';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+/**
+ * Called on a schedule (Vercel Cron, or the GitHub workflow every 15 min)
+ * with `Authorization: Bearer <CRON_SECRET>`. Sends every reminder that is
+ * due, once. Without CRON_SECRET on the server, every call is refused.
+ */
+export async function GET(req: Request) {
+  if (!cronAuthorized(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
+  try {
+    const data = await readData();
+    const now = new Date();
+    const due = [
+      ...dueNotifications(data.settings, now),
+      ...objectiveReminders(data, now),
+      ...agendaReminders(data, now),
+    ];
+    const results: { key: string; sent: number; failed: number }[] = [];
+
+    for (const item of due) {
+      if (await alreadySent(item.key)) continue;
+      const { sent, failed } = await sendToAll({
+        title: item.title,
+        body: item.body,
+        tag: item.tag,
+        url: item.url,
+      });
+      // Mark even when nothing was sent, so a device with no subscription does
+      // not get a burst of stale reminders the moment it subscribes.
+      await markSent(item.key);
+      results.push({ key: item.key, sent, failed });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      local: localNow(data.settings.timezone, now),
+      due: due.map((d) => d.key),
+      delivered: results,
+    });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
+export const POST = GET;

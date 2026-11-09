@@ -1,0 +1,57 @@
+{
+  "id": "/",
+  "name": "Reda Rise",
+  "short_name": "Reda Rise",
+  "description": "Objectifs du jour, calendrier, finances, business et réseau d’entrepreneurs.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0708",
+  "theme_color": "#0b0708",
+  "categories": [
+    "productivity",
+    "business",
+    "finance"
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Calendrier",
+      "url": "/calendrier"
+    },
+    {
+      "name": "Finances",
+      "url": "/finances"
+    },
+    {
+      "name": "Business",
+      "url": "/entrepreneuriat"
+    },
+    {
+      "name": "Vêtements",
+      "url": "/vetements"
+    }
+  ]
+}
