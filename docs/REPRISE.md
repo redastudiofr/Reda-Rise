@@ -1,4 +1,4 @@
-# Reprise : nouvelle app Reda Rise
+# Reprise : nouvelle app « Hustle Flow » (refonte de Reda Rise)
 
 À coller au début d'une nouvelle conversation, avec `docs/PROMPT-REFONTE.md`.
 

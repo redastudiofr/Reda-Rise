@@ -1,4 +1,4 @@
-# Refonte de Reda Rise : prompts prêts à copier
+# Hustle Flow (refonte de Reda Rise) : prompts prêts à copier
 
 Ce fichier contient deux prompts :
 
@@ -14,7 +14,7 @@ Les passages entre [crochets] sont à adapter ou à supprimer.
 ## Prompt 1 : Claude Design
 
 ```
-Crée le design complet d'une application web mobile-first (PWA installable sur iPhone et Android, utilisable aussi sur ordinateur) nommée « Reda Rise », de la marque REDA STUDIO. C'est une app de discipline personnelle et de pilotage de vie d'entrepreneur, gamifiée (XP, niveaux, récompenses).
+Crée le design complet d'une application web mobile-first (PWA installable sur iPhone et Android, utilisable aussi sur ordinateur) nommée « Hustle Flow » (anciennement Reda Rise), de la même famille que la marque de vêtements Hustle Studio / REDA STUDIO. C'est une app de discipline personnelle et de pilotage de vie d'entrepreneur, gamifiée (XP, niveaux, récompenses).
 
 Identité visuelle :
 - Fond très sombre, noir chaud légèrement teinté de rouge (pas un noir bleuté), qui s'accorde avec la couleur secondaire.
@@ -48,7 +48,7 @@ Livrables : maquettes mobile (390 px) et ordinateur (1440 px), composants réuti
 ## Prompt 2 : Claude Code
 
 ```
-Tu vas reconstruire de zéro mon application « Reda Rise » (marque REDA STUDIO). Je fournis le design fait avec Claude Design [lien ou fichiers joints] : respecte-le fidèlement (couleurs, typographies, composants, espacements). Ne réinvente pas le style. S'il manque un écran, déduis-le des composants existants.
+Tu vas reconstruire de zéro mon application, qui s'appelait « Reda Rise » et s'appelle désormais « Hustle Flow » (famille de marque Hustle Studio / REDA STUDIO). Je fournis le design fait avec Claude Design [lien ou fichiers joints] : respecte-le fidèlement (couleurs, typographies, composants, espacements). Ne réinvente pas le style. S'il manque un écran, déduis-le des composants existants.
 
 Réponds-moi toujours en français. Avance par étapes (voir « Plan de travail »). À la fin de chaque étape, dis-moi ce qui est fait, comment le tester, et ce qui reste. Teste chaque intégration avant de passer à la suivante. Demande-moi une clé seulement quand tu en as besoin, et ne me demande jamais de la coller dans le chat : dis-moi dans quelle variable d'environnement la mettre.
 
