@@ -1,0 +1,448 @@
+import type {
+  Bank,
+  BankAccount,
+  BankConnection,
+  BankProviderId,
+  BankTransaction,
+  SpendCategory,
+} from './types';
+import { shiftKey, weekDatesFrom } from './logic';
+import type { TransferContext } from './transfers';
+
+/**
+ * Bank layer.
+ *
+ * Connecting a real bank goes through an aggregator: the user authenticates on
+ * their bank's own page, and the aggregator hands back tokens and transactions.
+ * The app therefore never sees — and never stores — a banking login or
+ * password. Only the opaque ids returned by the aggregator are kept.
+ *
+ * Enable Banking is wired up (see bankProviders/enableBanking.ts); the other
+ * providers are listed but have no connector, and say so. `/api/bank/status`
+ * reports what the environment is configured for. Nothing here invents a
+ * connection or a transaction.
+ */
+
+export type BankProviderInfo = {
+  id: BankProviderId;
+  label: string;
+  /** Environment variables that must be set for this provider to go live. */
+  envVars: string[];
+  docs: string;
+  note: string;
+};
+
+export const BANK_PROVIDERS: BankProviderInfo[] = [
+  {
+    id: 'enablebanking',
+    label: 'Enable Banking',
+    envVars: ['ENABLE_BANKING_APP_ID', 'ENABLE_BANKING_PRIVATE_KEY'],
+    docs: 'https://enablebanking.com/docs/api/quick-start/',
+    note: 'Agréé DSP2, banques européennes. Gratuit pour relier ses propres comptes (mode restreint).',
+  },
+  {
+    id: 'powens',
+    label: 'Powens (ex-Budget Insight)',
+    envVars: ['POWENS_CLIENT_ID', 'POWENS_CLIENT_SECRET', 'POWENS_DOMAIN'],
+    docs: 'https://docs.powens.com',
+    note: 'Large couverture des banques françaises, agrégation et catégorisation.',
+  },
+  {
+    id: 'bridge',
+    label: 'Bridge by Bankin’',
+    envVars: ['BRIDGE_CLIENT_ID', 'BRIDGE_CLIENT_SECRET'],
+    docs: 'https://docs.bridgeapi.io',
+    note: 'API française, agrément DSP2, parcours de connexion hébergé.',
+  },
+  {
+    id: 'gocardless',
+    label: 'GoCardless Bank Account Data',
+    envVars: ['GOCARDLESS_SECRET_ID', 'GOCARDLESS_SECRET_KEY'],
+    docs: 'https://developer.gocardless.com/bank-account-data',
+    note: 'Inscriptions fermées depuis juillet 2025 — seuls les comptes existants fonctionnent.',
+  },
+  {
+    id: 'tink',
+    label: 'Tink (Visa)',
+    envVars: ['TINK_CLIENT_ID', 'TINK_CLIENT_SECRET'],
+    docs: 'https://docs.tink.com',
+    note: 'Couverture européenne large.',
+  },
+  {
+    id: 'plaid',
+    label: 'Plaid',
+    envVars: ['PLAID_CLIENT_ID', 'PLAID_SECRET', 'PLAID_ENV'],
+    docs: 'https://plaid.com/docs',
+    note: 'Surtout US et UK, couverture française limitée.',
+  },
+];
+
+/** What `/api/bank/status` answers. */
+export type BankStatus = {
+  configured: boolean;
+  provider: BankProviderId | null;
+  providers: BankProviderInfo[];
+  /** Which variables are still missing for the closest-to-ready provider. */
+  missing: string[];
+  /** Whether the configured provider has a working connector in this app. */
+  implemented: boolean;
+  /** Security prerequisites not met yet; connecting is refused while any remain. */
+  blockers: { id: string; message: string }[];
+  /** Server-side storage is durable (a database), not memory that restarts. */
+  durable: boolean;
+};
+
+/* ---------- classement automatique des dépenses ---------- */
+
+export const SPEND_CATEGORIES: { id: SpendCategory; label: string; color: string }[] = [
+  { id: 'alimentation', label: 'Alimentation', color: '#4ec38a' },
+  { id: 'logement', label: 'Logement', color: '#d64a62' },
+  { id: 'transport', label: 'Transport', color: '#e0a06f' },
+  { id: 'shopping', label: 'Shopping', color: '#b47fe0' },
+  { id: 'abonnements', label: 'Abonnements', color: '#5ec8d8' },
+  { id: 'loisirs', label: 'Loisirs', color: '#e0806f' },
+  { id: 'sante', label: 'Santé', color: '#d8b45e' },
+  { id: 'epargne', label: 'Épargne', color: '#d98a9a' },
+  { id: 'revenus', label: 'Revenus', color: '#4ec38a' },
+  { id: 'autre', label: 'Autre', color: '#767f8c' },
+];
+
+export function categoryLabel(id: SpendCategory): string {
+  return SPEND_CATEGORIES.find((c) => c.id === id)?.label ?? 'Autre';
+}
+
+export function categoryColor(id: SpendCategory): string {
+  return SPEND_CATEGORIES.find((c) => c.id === id)?.color ?? '#767f8c';
+}
+
+/**
+ * Keyword rules, checked in order. Deliberately plain and readable: the point
+ * is that anyone can see why a transaction landed where it did, and correct it
+ * in one tap when a rule gets it wrong.
+ */
+const RULES: { category: SpendCategory; keywords: string[] }[] = [
+  {
+    category: 'abonnements',
+    keywords: [
+      'netflix', 'spotify', 'deezer', 'disney', 'prime video', 'canal+', 'canal plus',
+      'apple.com/bill', 'itunes', 'icloud', 'google one', 'youtube premium', 'adobe',
+      'microsoft', 'office 365', 'openai', 'dropbox', 'basic fit', 'basic-fit',
+      'fitness park', 'neoness', 'salle de sport', 'orange', 'sfr', 'bouygues',
+      'free mobile', 'free telecom', 'sosh', 'red by sfr', 'abonnement',
+    ],
+  },
+  {
+    category: 'logement',
+    keywords: [
+      'loyer', 'edf', 'engie', 'total energies', 'totalenergies', 'veolia', 'suez',
+      'eau de paris', 'gaz', 'electricite', 'électricité', 'syndic', 'charges copro',
+      'assurance habitation', 'credit immobilier', 'crédit immobilier', 'foncia',
+      'nexity', 'taxe fonciere', 'taxe foncière', 'taxe habitation',
+    ],
+  },
+  {
+    category: 'transport',
+    keywords: [
+      'sncf', 'ratp', 'navigo', 'ter ', 'ouigo', 'trainline', 'blablacar', 'flixbus',
+      'uber', 'bolt', 'freenow', 'taxi', 'total access', 'station service', 'esso',
+      'shell', 'bp ', 'avia', 'carburant', 'peage', 'péage', 'vinci autoroute',
+      'sanef', 'aprr', 'parking', 'indigo park', 'velib', 'vélib', 'lime', 'tisseo',
+      'tcl ', 'keolis',
+    ],
+  },
+  {
+    category: 'loisirs',
+    keywords: [
+      'restaurant', 'brasserie', 'pizzeria', 'sushi', 'kebab', 'mcdonald', 'mcdo',
+      'burger king', 'kfc', 'subway', 'starbucks', 'uber eats', 'ubereats',
+      'deliveroo', 'just eat', 'bar ', 'pub ', 'cinema', 'cinéma', 'ugc', 'pathe',
+      'pathé', 'gaumont', 'steam', 'playstation', 'xbox', 'nintendo', 'concert',
+      'fnac spectacles', 'ticketmaster', 'billetterie', 'bowling', 'karting',
+    ],
+  },
+  {
+    category: 'alimentation',
+    keywords: [
+      'carrefour', 'leclerc', 'e.leclerc', 'lidl', 'aldi', 'auchan', 'intermarche',
+      'intermarché', 'monoprix', 'franprix', 'casino', 'super u', 'hyper u', 'u express',
+      'picard', 'grand frais', 'naturalia', 'biocoop', 'boulangerie', 'boucherie',
+      'primeur', 'marche ', 'marché ', 'supermarche', 'supermarché', 'epicerie',
+      'épicerie', 'cora', 'match ', 'netto', 'g20',
+    ],
+  },
+  {
+    category: 'sante',
+    keywords: [
+      'pharmacie', 'doctolib', 'medecin', 'médecin', 'dentiste', 'dr ', 'docteur',
+      'mutuelle', 'harmonie mutuelle', 'opticien', 'optic', 'laboratoire', 'labo ',
+      'hopital', 'hôpital', 'clinique', 'kine', 'kiné', 'cpam', 'ameli',
+    ],
+  },
+  {
+    category: 'shopping',
+    keywords: [
+      'amazon', 'zara', 'h&m', 'h et m', 'uniqlo', 'nike', 'adidas', 'jd sports',
+      'courir', 'foot locker', 'decathlon', 'fnac', 'darty', 'boulanger', 'cdiscount',
+      'zalando', 'vinted', 'shein', 'asos', 'ikea', 'action', 'gifi', 'leroy merlin',
+      'castorama', 'bricorama', 'sephora', 'nocibe', 'nocibé', 'kiabi', 'primark',
+    ],
+  },
+];
+
+/**
+ * Best-guess category for a transaction label, from the keyword rules. Never
+ * "Épargne": a transfer to savings is recognised by its other leg on a savings
+ * account (lib/transfers.ts), not by its wording. Money coming in that matched nothing is
+ * income, money going out that matched nothing stays "autre" rather than
+ * being filed under a guess.
+ */
+export function classify(label: string, amount: number): SpendCategory {
+  const text = ` ${label.toLowerCase()} `;
+  for (const rule of RULES) {
+    if (rule.keywords.some((k) => text.includes(k))) return rule.category;
+  }
+  return amount > 0 ? 'revenus' : 'autre';
+}
+
+/* ---------- périodes ---------- */
+
+export type PeriodId = 'jour' | 'semaine' | 'mois' | 'annee';
+
+export const PERIODS: { id: PeriodId; label: string }[] = [
+  { id: 'jour', label: 'Jour' },
+  { id: 'semaine', label: 'Semaine' },
+  { id: 'mois', label: 'Mois' },
+  { id: 'annee', label: 'Année' },
+];
+
+export type Range = { from: string; to: string; label: string };
+
+/** The window covered by a period, ending today. Both bounds are inclusive. */
+export function periodRange(period: PeriodId, today: string): Range {
+  if (period === 'jour') {
+    return { from: today, to: today, label: 'Aujourd’hui' };
+  }
+  if (period === 'semaine') {
+    const week = weekDatesFrom(today);
+    return { from: week[0], to: week[6], label: 'Cette semaine' };
+  }
+  if (period === 'mois') {
+    const [y, m] = today.split('-').map(Number);
+    const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return { from: `${y}-${pad(m)}-01`, to: `${y}-${pad(m)}-${pad(last)}`, label: 'Ce mois' };
+  }
+  const year = today.slice(0, 4);
+  return { from: `${year}-01-01`, to: `${year}-12-31`, label: 'Cette année' };
+}
+
+/** The same window, shifted one step back — used to compare with the period before. */
+export function previousRange(period: PeriodId, today: string): Range {
+  if (period === 'jour') return periodRange('jour', shiftKey(today, -1));
+  if (period === 'semaine') return periodRange('semaine', shiftKey(today, -7));
+  if (period === 'mois') {
+    const [y, m] = today.split('-').map(Number);
+    const prev = new Date(Date.UTC(y, m - 2, 1));
+    return periodRange('mois', prev.toISOString().slice(0, 10));
+  }
+  const year = Number(today.slice(0, 4)) - 1;
+  return periodRange('annee', `${year}-06-15`);
+}
+
+export function inRange(date: string, range: Range): boolean {
+  return date >= range.from && date <= range.to;
+}
+
+/* ---------- agrégats ---------- */
+
+/** All figures in integer cents. */
+export type BankSummary = {
+  spentCents: number;
+  earnedCents: number;
+  savedCents: number;
+  netCents: number;
+  count: number;
+};
+
+/**
+ * Totals over a window. Savings transfers are counted apart so they never look
+ * like spending — money set aside is not money gone.
+ */
+export function summarize(transactions: BankTransaction[], range: Range): BankSummary {
+  let spentCents = 0;
+  let earnedCents = 0;
+  let savedCents = 0;
+  let count = 0;
+
+  for (const t of transactions) {
+    if (!inRange(t.date, range)) continue;
+    count += 1;
+    if (t.category === 'epargne') savedCents += Math.abs(t.amountCents);
+    else if (t.amountCents > 0) earnedCents += t.amountCents;
+    else spentCents += -t.amountCents;
+  }
+
+  return { spentCents, earnedCents, savedCents, netCents: earnedCents - spentCents, count };
+}
+
+export type CategorySlice = {
+  category: SpendCategory;
+  amountCents: number;
+  share: number;
+  count: number;
+};
+
+/** Where the money went over a window, biggest slice first. */
+export function spendByCategory(
+  transactions: BankTransaction[],
+  range: Range,
+  ctx?: TransferContext,
+): CategorySlice[] {
+  const totals = new Map<SpendCategory, { cents: number; count: number }>();
+  let total = 0;
+
+  for (const t of transactions) {
+    if (!inRange(t.date, range)) continue;
+    if (t.amountCents >= 0 || t.category === 'epargne' || ctx?.pairs.has(t.id)) continue;
+    const row = totals.get(t.category) ?? { cents: 0, count: 0 };
+    row.cents += -t.amountCents;
+    row.count += 1;
+    totals.set(t.category, row);
+    total += -t.amountCents;
+  }
+
+  return [...totals.entries()]
+    .map(([category, row]) => ({
+      category,
+      amountCents: row.cents,
+      share: total > 0 ? row.cents / total : 0,
+      count: row.count,
+    }))
+    .sort((a, b) => b.amountCents - a.amountCents);
+}
+
+/** Running balance day by day over a window, in cents. */
+export function balanceSeries(
+  transactions: BankTransaction[],
+  range: Range,
+): { date: string; value: number }[] {
+  const deltas = new Map<string, number>();
+  for (const t of transactions) {
+    if (!inRange(t.date, range)) continue;
+    deltas.set(t.date, (deltas.get(t.date) ?? 0) + t.amountCents);
+  }
+
+  const points: { date: string; value: number }[] = [];
+  let running = 0;
+  let cursor = range.from;
+  let guard = 0;
+  while (cursor <= range.to && guard < 400) {
+    running += deltas.get(cursor) ?? 0;
+    points.push({ date: cursor, value: running });
+    cursor = shiftKey(cursor, 1);
+    guard += 1;
+  }
+  return points;
+}
+
+/** Sum of the known balances, in cents; null when no bank gave one. */
+export function accountsTotalCents(accounts: BankAccount[]): number | null {
+  const known = accounts.filter((a) => typeof a.balanceCents === 'number');
+  if (known.length === 0) return null;
+  return known.reduce((a, x) => a + (x.balanceCents ?? 0), 0);
+}
+
+/**
+ * What the bank accounts add to the net worth on the Finances page: euro
+ * accounts whose balance is known (another currency is not converted).
+ */
+export function bankWorthCents(accounts: BankAccount[]): { cents: number; count: number } {
+  const known = accounts.filter((a) => typeof a.balanceCents === 'number' && (a.currency || 'EUR') === 'EUR');
+  return { cents: known.reduce((s, a) => s + (a.balanceCents ?? 0), 0), count: known.length };
+}
+
+export function transactionsOf(bank: Bank, accountId: string | null): BankTransaction[] {
+  const rows = accountId
+    ? bank.transactions.filter((t) => t.accountId === accountId)
+    : bank.transactions;
+  return [...rows].sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
+/* ---------- fusion d'une synchronisation ---------- */
+
+export type SyncPayload = {
+  connections: BankConnection[];
+  accounts: BankAccount[];
+  transactions: BankTransaction[];
+  syncedAt: string;
+};
+
+/**
+ * Merges what the server fetched into the user's bank data.
+ * - Connections: the server's list is the truth for provider links.
+ * - Accounts: updated in place; a balance the bank did not return this time
+ *   keeps its previous value instead of disappearing.
+ * - Transactions: added once (stable ids); a category the user corrected is
+ *   kept; pending lines that the bank has since booked under another id are
+ *   dropped for the accounts that were refreshed.
+ */
+export function mergeSync(bank: Bank, p: SyncPayload): Bank {
+  const accounts = [...bank.accounts];
+  for (const incoming of p.accounts) {
+    const i = accounts.findIndex((a) => a.id === incoming.id);
+    if (i === -1) accounts.push(incoming);
+    else {
+      const old = accounts[i];
+      accounts[i] = {
+        ...old,
+        ...incoming,
+        balanceCents: incoming.balanceCents ?? old.balanceCents,
+        updatedAt: incoming.balanceCents !== undefined ? incoming.updatedAt : old.updatedAt,
+      };
+    }
+  }
+
+  const fresh = new Map(p.transactions.map((t) => [t.id, t]));
+  const refreshed = new Set(p.transactions.map((t) => t.accountId));
+  const kept = bank.transactions.filter(
+    (t) => fresh.has(t.id) || !(t.pending && refreshed.has(t.accountId)),
+  );
+  const byId = new Map(kept.map((t) => [t.id, t]));
+  for (const t of p.transactions) {
+    const old = byId.get(t.id);
+    byId.set(
+      t.id,
+      old?.manualCategory ? { ...t, category: old.category, manualCategory: true } : t,
+    );
+  }
+
+  return {
+    ...bank,
+    connections: p.connections,
+    accounts,
+    transactions: [...byId.values()],
+    lastSyncAt: p.connections.length > 0 ? p.syncedAt : bank.lastSyncAt,
+  };
+}
+
+/**
+ * When the app saves its whole document, the server may hold a newer bank
+ * sync (the daily job ran while the app was open). The newer sync is kept:
+ * its balances and transactions are merged back in, for the connections the
+ * app still has — a bank disconnected in the app meanwhile is not revived.
+ * Categories corrected in the app are kept (mergeSync).
+ */
+export function reconcileBank(incoming: Bank, stored: Bank): Bank {
+  if (!stored.lastSyncAt || (incoming.lastSyncAt && incoming.lastSyncAt >= stored.lastSyncAt)) return incoming;
+  const kept = new Set(incoming.connections.map((c) => c.id));
+  if (kept.size === 0) return incoming;
+  const accounts = stored.accounts.filter((a) => kept.has(a.connectionId));
+  const accountIds = new Set(accounts.map((a) => a.id));
+  const storedConn = new Map(stored.connections.map((c) => [c.id, c]));
+  return mergeSync(incoming, {
+    connections: incoming.connections.map((c) => storedConn.get(c.id) ?? c),
+    accounts,
+    transactions: stored.transactions.filter((t) => accountIds.has(t.accountId)),
+    syncedAt: stored.lastSyncAt,
+  });
+}
