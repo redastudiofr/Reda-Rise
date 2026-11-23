@@ -1,0 +1,13 @@
+{
+  "id": "/",
+  "name": "Hustly",
+  "short_name": "Hustly",
+  "description": "Habitudes, tâches et discipline quotidienne.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#000000"
+}
